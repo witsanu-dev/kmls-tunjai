@@ -100,13 +100,30 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSu
         {/* Login Card - Light Theme Standard */}
         <div className="bg-white border border-slate-200 rounded-md p-6 shadow-sm space-y-4">
           <div className="border-b border-slate-100 pb-3">
-            <h2 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
-              <Lock className="w-4 h-4 text-teal-600" />
-              <span>ลงชื่อเข้าสู่ระบบ (Sign In)</span>
-            </h2>
-            <p className="text-[11px] text-slate-500 mt-0.5">
-              กรุณาระบุบัญชีผู้ใช้งานที่ได้รับอนุมัติเพื่อเข้าถึงระบบ
-            </p>
+            <div className="flex items-center justify-between gap-3">
+              {/* Left: Title */}
+              <div>
+                <h2 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                  <Lock className="w-4 h-4 text-teal-600 shrink-0" />
+                  <span>ลงชื่อเข้าสู่ระบบ (Sign In)</span>
+                </h2>
+                <p className="text-[11px] text-slate-500 mt-0.5 pl-5">
+                  กรุณาระบุบัญชีผู้ใช้งานที่ได้รับอนุมัติเพื่อเข้าถึงระบบ
+                </p>
+              </div>
+              {/* Right: MOPH Logo */}
+              <div className="flex flex-col items-center gap-1 shrink-0">
+                <img
+                  src="https://bdh.moph.go.th/site/wp-content/uploads/2022/12/cropped-logo-MOPH.png"
+                  alt="กระทรวงสาธารณสุข"
+                  className="w-10 h-10 object-contain rounded-md"
+                  title="กระทรวงสาธารณสุข"
+                />
+                <span className="text-[8px] font-semibold text-slate-400 tracking-wide text-center leading-tight whitespace-nowrap">
+                  สธ.
+                </span>
+              </div>
+            </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
