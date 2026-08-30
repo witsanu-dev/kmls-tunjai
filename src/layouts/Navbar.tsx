@@ -92,27 +92,27 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
 
         {/* Left: Mobile Menu Button & Brand Header */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 mr-2 sm:mr-4">
           <button
             type="button"
             onClick={onOpenMobileMenu}
-            className="md:hidden p-2 rounded-md text-slate-600 hover:bg-slate-100 transition-colors"
+            className="md:hidden p-1.5 rounded-md text-slate-600 hover:bg-slate-100 transition-colors shrink-0"
             aria-label="Toggle Navigation Menu"
           >
             <Menu className="w-5 h-5" />
           </button>
 
-          <div className="flex items-center gap-2.5 shrink-0">
-            <div className="bg-gradient-to-br from-teal-600 to-emerald-600 text-white p-2 rounded-md shadow-sm flex items-center justify-center shrink-0 self-center">
-              <Siren className="w-5 h-5 sm:w-6 sm:h-6 animate-pulse" />
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+            <div className="bg-gradient-to-br from-teal-600 to-emerald-600 text-white p-1.5 sm:p-2 rounded-md shadow-sm flex items-center justify-center shrink-0 self-center">
+              <Siren className="w-4 h-4 sm:w-6 sm:h-6 animate-pulse" />
             </div>
             <div className="flex flex-col justify-center text-left my-auto shrink-0">
               <div className="flex items-center gap-1.5 leading-none flex-nowrap">
                 <h1 className="text-base sm:text-xl font-black tracking-tight bg-gradient-to-r from-teal-700 via-teal-600 to-emerald-600 bg-clip-text text-transparent leading-none inline-block py-0.5 whitespace-nowrap">
                   ทันใจ
                 </h1>
-                <span className="text-slate-300 font-light text-sm sm:text-base">|</span>
-                <span className="text-emerald-600 animate-pulse font-black text-base sm:text-xl tracking-wider uppercase inline-block whitespace-nowrap">
+                <span className="text-slate-300 font-light text-xs sm:text-base">|</span>
+                <span className="text-emerald-600 animate-pulse font-black text-sm sm:text-xl tracking-wider uppercase inline-block whitespace-nowrap">
                   TUNJAI
                 </span>
                 <button
@@ -131,11 +131,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                   )}
                 </button>
               </div>
-              <div className="flex items-center gap-1.5 mt-1 leading-none flex-nowrap shrink-0">
-                <span className="text-[10px] sm:text-xs font-bold text-slate-700 tracking-wider uppercase whitespace-nowrap shrink-0">
+              <div className="flex items-center gap-1 sm:gap-1.5 mt-1 leading-none flex-nowrap shrink-0">
+                <span className="text-[9px] sm:text-xs font-bold text-slate-700 tracking-wider uppercase whitespace-nowrap shrink-0">
                   STROKE ALERT
                 </span>
-                <span className="bg-rose-100 text-rose-800 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md border border-rose-200 uppercase tracking-wider shrink-0 leading-none whitespace-nowrap">
+                <span className="bg-rose-100 text-rose-800 text-[8px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md border border-rose-200 uppercase tracking-wider shrink-0 leading-none whitespace-nowrap">
                   FAST Track
                 </span>
               </div>
@@ -144,7 +144,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Right Status Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0 ml-auto">
           {/* Active Cases Badge */}
           {activeAlertCount > 0 && (
             <div className="hidden sm:flex items-center gap-1.5 siren-badge-pulse text-white border border-rose-400 px-3 py-1.5 rounded-md text-xs font-bold shadow-xs h-9">
