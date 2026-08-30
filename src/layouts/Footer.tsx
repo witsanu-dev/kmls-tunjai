@@ -3,42 +3,49 @@ import { Terminal } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="bg-white border-t border-slate-200 py-4 px-4 sm:px-6 mt-auto">
-      <div className="max-w-7xl mx-auto flex items-center justify-center">
-        <div className="flex flex-col items-center gap-2.5">
+    <footer className="bg-white border-t border-slate-200 py-2.5 px-4 sm:px-6 mt-auto">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap">
 
-          {/* Developer Badge with Terminal Icon */}
-          <div className="flex items-center gap-2">
-            <div className="bg-gradient-to-br from-teal-600 to-emerald-600 text-white p-1.5 rounded-md shadow-sm flex items-center justify-center shrink-0">
-              <Terminal className="w-3.5 h-3.5" />
-            </div>
-            <span className="text-[11px] font-bold text-slate-500 tracking-widest uppercase">
-              DEVELOPMENT BY
-            </span>
+        {/* Left: Developer Credit */}
+        <div className="flex items-center gap-2.5">
+          {/* Terminal Icon Badge - Black Gradient */}
+          <div
+            className="flex items-center justify-center p-1.5 rounded-md shrink-0 shadow-sm"
+            style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' }}
+          >
+            <Terminal className="w-3.5 h-3.5 text-white" strokeWidth={2.8} />
           </div>
 
-          {/* Developer Name & Position */}
-          <div className="flex items-center justify-center gap-3 flex-wrap">
-            <span className="text-sm font-black text-teal-700 tracking-tight">
+          {/* Developer Info */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase hidden sm:inline">
+              Dev by
+            </span>
+            <span className="text-xs font-black text-slate-800 tracking-tight whitespace-nowrap">
               วิษณุ ศรีโยธา
             </span>
-            <div className="w-px h-4 bg-slate-300 hidden sm:block" />
-            <span className="text-xs font-semibold text-slate-600">
+            <div className="w-px h-3 bg-slate-300 hidden sm:block" />
+            <span className="text-[11px] font-semibold text-slate-500 hidden sm:inline whitespace-nowrap">
               นักวิชาการคอมพิวเตอร์
             </span>
+            <div className="w-px h-3 bg-slate-300 hidden md:block" />
+            <span className="text-[10px] font-medium text-slate-400 hidden md:inline whitespace-nowrap">
+              กลุ่มงานสุขภาพดิจิทัล โรงพยาบาลกมลาไสย
+            </span>
           </div>
-
-          {/* Agency */}
-          <p className="text-[11px] text-slate-500 font-medium text-center">
-            กลุ่มงานสุขภาพดิจิทัล โรงพยาบาลกมลาไสย จังหวัดกาฬสินธุ์
-          </p>
-
-          {/* Version & Copyright */}
-          <p className="text-[10px] text-slate-400 font-semibold tracking-wider">
-            © 2026 • VERSION 69.8.1.31
-          </p>
-
         </div>
+
+        {/* Right: Version & Copyright */}
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-[10px] font-semibold text-slate-400 tracking-wider whitespace-nowrap">
+            © 2026
+          </span>
+          <div className="w-px h-3 bg-slate-200" />
+          <span className="bg-slate-100 border border-slate-200 text-slate-500 text-[10px] font-bold px-2 py-0.5 rounded-md tracking-wider whitespace-nowrap">
+            v69.8.1.31
+          </span>
+        </div>
+
       </div>
     </footer>
   );
