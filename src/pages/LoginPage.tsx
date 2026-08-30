@@ -120,7 +120,7 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSu
                   title="กระทรวงสาธารณสุข"
                 />
                 <span className="text-[8px] font-semibold text-slate-400 tracking-wide text-center leading-tight whitespace-nowrap">
-                  สธ.
+                  รพ.กมลาไสย
                 </span>
               </div>
             </div>
