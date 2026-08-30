@@ -188,15 +188,15 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSu
                   confirmButtonColor: '#0d9488',
                 });
               }}
-              className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-md shadow-xs active:scale-[0.99] transition-all cursor-pointer bg-white border border-teal-200 hover:bg-teal-50 hover:border-teal-300"
+              className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-md shadow-xs active:scale-[0.99] transition-all duration-300 cursor-pointer border border-teal-200/90 bg-gradient-to-r from-teal-100 via-teal-50 to-white hover:from-teal-200 hover:via-teal-100 hover:to-slate-50 hover:border-teal-300 hover:shadow-sm focus:ring-2 focus:ring-teal-400 focus:outline-none"
             >
-              <span className="text-sm font-semibold text-slate-600 whitespace-nowrap">
+              <span className="text-sm font-bold text-teal-950 whitespace-nowrap">
                 ยืนยันตัวตนเข้าสู่ระบบด้วย
               </span>
               <img
                 src="https://provider.id.th/assets/Plogo-f6506bc1.png"
                 alt="Provider ID"
-                className="h-8 object-contain"
+                className="h-8 object-contain drop-shadow-xs"
               />
             </button>
           </form>
