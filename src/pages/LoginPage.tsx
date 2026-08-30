@@ -157,8 +157,11 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSu
         <div className="bg-white border border-slate-200 rounded-md px-5 py-4 shadow-sm text-center space-y-2.5">
           {/* Terminal Badge + Title */}
           <div className="flex items-center justify-center gap-2">
-            <div className="bg-gradient-to-br from-teal-600 to-emerald-600 text-white p-1.5 rounded-md shadow-sm flex items-center justify-center shrink-0">
-              <Terminal className="w-3.5 h-3.5" />
+            <div
+              className="flex items-center justify-center p-1.5 rounded-md shadow-sm shrink-0"
+              style={{ background: 'linear-gradient(135deg, #0f4c4c 0%, #0d9488 100%)' }}
+            >
+              <Terminal className="w-3.5 h-3.5 text-white" strokeWidth={3} />
             </div>
             <span className="text-[10px] font-bold text-slate-500 tracking-widest uppercase">
               DEVELOPMENT BY

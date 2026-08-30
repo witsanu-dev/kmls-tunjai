@@ -11,9 +11,9 @@ export const Footer: React.FC = () => {
           {/* Terminal Icon Badge - Black Gradient */}
           <div
             className="flex items-center justify-center p-1.5 rounded-md shrink-0 shadow-sm"
-            style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' }}
+            style={{ background: 'linear-gradient(135deg, #0f4c4c 0%, #0d9488 100%)' }}
           >
-            <Terminal className="w-3.5 h-3.5 text-white" strokeWidth={2.8} />
+            <Terminal className="w-3.5 h-3.5 text-white" strokeWidth={3} />
           </div>
 
           {/* Developer Info */}
@@ -21,7 +21,7 @@ export const Footer: React.FC = () => {
             <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase hidden sm:inline">
               Dev by
             </span>
-            <span className="text-xs font-black text-slate-800 tracking-tight whitespace-nowrap">
+            <span className="text-xs font-black text-teal-700 tracking-tight whitespace-nowrap">
               วิษณุ ศรีโยธา
             </span>
             <div className="w-px h-3 bg-slate-300 hidden sm:block" />
