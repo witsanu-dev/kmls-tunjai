@@ -7,6 +7,7 @@ export default defineConfig({
   base: './', // Allows dist folder to be deployed on Apache/HTTPD subdirectories cleanly
   server: {
     port: 5173,
+    host: true,
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:5000',
