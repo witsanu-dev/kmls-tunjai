@@ -102,17 +102,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Menu className="w-5 h-5" />
           </button>
 
-          <div className="flex items-center gap-2.5">
-            <div className="bg-gradient-to-br from-teal-600 to-emerald-600 text-white p-2.5 rounded-md shadow-sm flex items-center justify-center shrink-0 self-center">
-              <Siren className="w-6 h-6 animate-pulse" />
+          <div className="flex items-center gap-2.5 shrink-0">
+            <div className="bg-gradient-to-br from-teal-600 to-emerald-600 text-white p-2 rounded-md shadow-sm flex items-center justify-center shrink-0 self-center">
+              <Siren className="w-5 h-5 sm:w-6 sm:h-6 animate-pulse" />
             </div>
-            <div className="flex flex-col justify-center text-left my-auto">
-              <div className="flex items-center gap-1.5 leading-none">
-                <h1 className="text-lg sm:text-xl font-black tracking-tight bg-gradient-to-r from-teal-700 via-teal-600 to-emerald-600 bg-clip-text text-transparent leading-none inline-block py-0.5">
+            <div className="flex flex-col justify-center text-left my-auto shrink-0">
+              <div className="flex items-center gap-1.5 leading-none flex-nowrap">
+                <h1 className="text-base sm:text-xl font-black tracking-tight bg-gradient-to-r from-teal-700 via-teal-600 to-emerald-600 bg-clip-text text-transparent leading-none inline-block py-0.5 whitespace-nowrap">
                   ทันใจ
                 </h1>
-                <span className="text-slate-300 font-light text-base">|</span>
-                <span className="text-emerald-600 animate-pulse font-black text-lg sm:text-xl tracking-wider uppercase inline-block">
+                <span className="text-slate-300 font-light text-sm sm:text-base">|</span>
+                <span className="text-emerald-600 animate-pulse font-black text-base sm:text-xl tracking-wider uppercase inline-block whitespace-nowrap">
                   TUNJAI
                 </span>
                 <button
@@ -125,14 +125,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                   title={soundEnabled ? 'ปิดเสียงเตือน' : 'เปิดเสียงเตือน'}
                 >
                   {soundEnabled ? (
-                    <Volume2 className="w-4 h-4 text-emerald-600 animate-pulse" />
+                    <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 animate-pulse" />
                   ) : (
-                    <VolumeX className="w-4 h-4 text-slate-400" />
+                    <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400" />
                   )}
                 </button>
               </div>
-              <div className="flex items-center gap-1.5 mt-0.5 leading-none flex-nowrap shrink-0">
-                <span className="text-[10px] sm:text-xs font-bold text-slate-700 tracking-wider uppercase leading-none whitespace-nowrap shrink-0">
+              <div className="flex items-center gap-1.5 mt-1 leading-none flex-nowrap shrink-0">
+                <span className="text-[10px] sm:text-xs font-bold text-slate-700 tracking-wider uppercase whitespace-nowrap shrink-0">
                   STROKE ALERT
                 </span>
                 <span className="bg-rose-100 text-rose-800 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md border border-rose-200 uppercase tracking-wider shrink-0 leading-none whitespace-nowrap">
