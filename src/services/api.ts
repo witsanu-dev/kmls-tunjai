@@ -350,6 +350,8 @@ export async function fetchMophNotifyConfig(): Promise<MophNotifyConfig> {
     moph_notify_secret_key: '3O3N65YXG7U3WQRO4GBAQV3EC3SY',
     moph_notify_hospital_line1: 'โรงพยาบาล',
     moph_notify_hospital_line2: 'กมลาไสย (Stroke Fast Track)',
+    moph_notify_hospital_logo: 'https://morpromt2c.moph.go.th/image/image_3771a3e8-57d0-4fe0-b0f8-3c97427eb201.png',
+    moph_notify_header_image: 'https://cdns.yellow-idea.com/moph/20250602/moph-flex-header-1.png',
   };
 }
 
