@@ -131,11 +131,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                   )}
                 </button>
               </div>
-              <div className="flex items-center gap-1.5 mt-0.5 leading-none">
-                <span className="text-[11px] font-bold text-slate-700 tracking-wider uppercase leading-none">
+              <div className="flex items-center gap-1.5 mt-0.5 leading-none flex-nowrap shrink-0">
+                <span className="text-[10px] sm:text-xs font-bold text-slate-700 tracking-wider uppercase leading-none whitespace-nowrap shrink-0">
                   STROKE ALERT
                 </span>
-                <span className="bg-rose-100 text-rose-800 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md border border-rose-200 uppercase tracking-wider shrink-0 leading-none">
+                <span className="bg-rose-100 text-rose-800 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md border border-rose-200 uppercase tracking-wider shrink-0 leading-none whitespace-nowrap">
                   FAST Track
                 </span>
               </div>

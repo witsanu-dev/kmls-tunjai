@@ -80,11 +80,11 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSu
                   )}
                 </button>
               </div>
-              <div className="flex items-center gap-2 mt-1.5 leading-none">
-                <span className="text-xs sm:text-sm font-bold text-slate-700 tracking-wider uppercase">
+              <div className="flex items-center gap-1.5 mt-1.5 leading-none flex-nowrap shrink-0">
+                <span className="text-xs sm:text-sm font-bold text-slate-700 tracking-wider uppercase whitespace-nowrap shrink-0">
                   STROKE ALERT
                 </span>
-                <span className="bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-0.5 rounded-md border border-rose-200 uppercase tracking-wider shrink-0 leading-none">
+                <span className="bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-0.5 rounded-md border border-rose-200 uppercase tracking-wider shrink-0 leading-none whitespace-nowrap">
                   FAST Track
                 </span>
               </div>
