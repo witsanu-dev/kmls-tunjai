@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Lock, User, Siren, ArrowRight, Volume2, VolumeX } from 'lucide-react';
+import { Lock, User, Siren, ArrowRight, Volume2, VolumeX, Terminal } from 'lucide-react';
 import { playEmergencySirenSound } from '../components/AudioAlert';
 import Swal from 'sweetalert2';
 
@@ -152,6 +152,37 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSu
             </button>
           </form>
         </div>
+
+        {/* Developer Footer Card */}
+        <div className="bg-white border border-slate-200 rounded-md px-5 py-4 shadow-sm text-center space-y-2.5">
+          {/* Terminal Badge + Title */}
+          <div className="flex items-center justify-center gap-2">
+            <div className="bg-gradient-to-br from-teal-600 to-emerald-600 text-white p-1.5 rounded-md shadow-sm flex items-center justify-center shrink-0">
+              <Terminal className="w-3.5 h-3.5" />
+            </div>
+            <span className="text-[10px] font-bold text-slate-500 tracking-widest uppercase">
+              DEVELOPMENT BY
+            </span>
+          </div>
+
+          {/* Developer Name & Position */}
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <span className="text-sm font-black text-teal-700 tracking-tight">วิษณุ ศรีโยธา</span>
+            <div className="w-px h-3.5 bg-slate-300" />
+            <span className="text-xs font-semibold text-slate-600">นักวิชาการคอมพิวเตอร์</span>
+          </div>
+
+          {/* Agency */}
+          <p className="text-[11px] text-slate-500 font-medium">
+            กลุ่มงานสุขภาพดิจิทัล โรงพยาบาลกมลาไสย จังหวัดกาฬสินธุ์
+          </p>
+
+          {/* Version & Copyright */}
+          <p className="text-[10px] text-slate-400 font-semibold tracking-wider pt-0.5 border-t border-slate-100">
+            © 2026 • VERSION 69.8.1.31
+          </p>
+        </div>
+
       </div>
     </div>
   );
