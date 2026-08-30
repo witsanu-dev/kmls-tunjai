@@ -167,6 +167,38 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSu
               <span>{loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3 my-1">
+              <div className="flex-1 h-px bg-slate-200" />
+              <span className="text-[11px] font-medium text-slate-400 whitespace-nowrap">
+                หรือ เข้าสู่ระบบด้วย Provider ID
+              </span>
+              <div className="flex-1 h-px bg-slate-200" />
+            </div>
+
+            {/* Provider ID Button */}
+            <button
+              type="button"
+              onClick={() => {
+                Swal.fire({
+                  icon: 'info',
+                  title: 'Provider ID',
+                  text: 'ฟังก์ชันนี้อยู่ระหว่างการพัฒนา',
+                  confirmButtonColor: '#0d9488',
+                });
+              }}
+              className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-md shadow-xs active:scale-[0.99] transition-all cursor-pointer bg-white border border-teal-200 hover:bg-teal-50 hover:border-teal-300"
+            >
+              <span className="text-sm font-semibold text-slate-600 whitespace-nowrap">
+                ยืนยันตัวตนเข้าสู่ระบบด้วย
+              </span>
+              <img
+                src="https://provider.id.th/assets/Plogo-f6506bc1.png"
+                alt="Provider ID"
+                className="h-8 object-contain"
+              />
+            </button>
           </form>
         </div>
 
