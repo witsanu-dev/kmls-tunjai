@@ -1,6 +1,6 @@
 import { CaseRecord, Hospital, Personnel, NewCasePayload, CaseStatus, UserAccount, AuditLogItem } from '../types/emergency';
 
-const API_BASE = '/api';
+const API_BASE = 'api';
 const LOCAL_STORAGE_KEY = 'er_stalert_cases_v2';
 const LOCAL_STORAGE_AUTH_TOKEN = 'er_stalert_auth_token_v1';
 const LOCAL_STORAGE_HOSPITALS = 'er_stalert_hospitals_v2';

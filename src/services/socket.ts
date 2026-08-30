@@ -5,7 +5,11 @@ let socket: Socket | null = null;
 
 export function getSocket(): Socket {
   if (!socket) {
+    const isSubPath = window.location.pathname.startsWith('/tunjai');
+    const socketPath = isSubPath ? '/tunjai/socket.io' : '/socket.io';
+
     socket = io(window.location.origin, {
+      path: socketPath,
       autoConnect: true,
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,
