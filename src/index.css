@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Anuphan', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+}
+
+/* Leaflet Map Fixes */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  border-radius: 0.375rem; /* rounded-md */
+  z-index: 1;
+}
+
+/* Custom Micro Animations */
+@keyframes ringPulseRed {
+  0%, 100% {
+    filter: drop-shadow(0 0 2px rgba(225, 29, 72, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(225, 29, 72, 0.9));
+  }
+}
+
+.pulse-red-ring {
+  animation: ringPulseRed 1.5s ease-in-out infinite;
+}
+
+@keyframes alertFlash {
+  0%, 100% {
+    background-color: rgba(255, 241, 242, 1); /* rose-50 */
+    border-color: rgba(254, 205, 211, 1); /* rose-200 */
+  }
+  50% {
+    background-color: rgba(255, 228, 230, 1); /* rose-100 */
+    border-color: rgba(251, 113, 133, 1); /* rose-400 */
+    box-shadow: 0 0 15px rgba(225, 29, 72, 0.15);
+  }
+}
+
+.alert-flash-bg {
+  animation: alertFlash 1.5s ease-in-out infinite;
+}
+
+@keyframes sirenBadgePulse {
+  0%, 100% {
+    background-color: rgba(225, 29, 72, 1); /* rose-600 */
+    box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7);
+  }
+  70% {
+    background-color: rgba(244, 63, 94, 1); /* rose-500 */
+    box-shadow: 0 0 0 6px rgba(225, 29, 72, 0);
+  }
+  100% {
+    background-color: rgba(225, 29, 72, 1);
+    box-shadow: 0 0 0 0 rgba(225, 29, 72, 0);
+  }
+}
+
+.siren-badge-pulse {
+  animation: sirenBadgePulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Expanding Radar Spread Alert Animation */
+@keyframes alertSpreadPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(245, 158, 11, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+  }
+}
+
+.alert-spread-pulse {
+  animation: alertSpreadPulse 1.6s infinite;
+}
+
+/* Expanding Red/Rose Radar Spread Alert Animation matching rose-600 */
+@keyframes alertSpreadPulseRed {
+  0% {
+    box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.75);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(225, 29, 72, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(225, 29, 72, 0);
+  }
+}
+
+.alert-spread-pulse-red {
+  animation: alertSpreadPulseRed 1.6s infinite;
+}
+
+
+/* Ensure SweetAlert2 Modal always renders on top of all modal dialogs (z-[99999]) */
+.swal2-container {
+  z-index: 99999 !important;
+}
+
+

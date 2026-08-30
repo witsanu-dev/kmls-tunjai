@@ -1,0 +1,16 @@
+{
+  "name": "Stroke Alert FAST Track",
+  "short_name": "Stroke Alert",
+  "description": "ระบบแจ้งเตือนโรคหลอดเลือดสมองเฉียบพลันสำหรับเครือข่าย FR และ รพ.สต.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B1220",
+  "theme_color": "#0B1220",
+  "lang": "th",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

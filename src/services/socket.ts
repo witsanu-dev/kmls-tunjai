@@ -1,0 +1,48 @@
+import { io, Socket } from 'socket.io-client';
+import { CaseRecord, CaseStatus } from '../types/emergency';
+
+let socket: Socket | null = null;
+
+export function getSocket(): Socket {
+  if (!socket) {
+    socket = io(window.location.origin, {
+      autoConnect: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+    });
+  }
+  return socket;
+}
+
+export function subscribeToEmergencyAlerts(
+  onNewAlert: (newCase: CaseRecord) => void,
+  onStatusUpdate: (data: { id: string; status: CaseStatus }) => void,
+  onReset: () => void,
+  onCaseDeleted?: (data: { id: string }) => void
+) {
+  const s = getSocket();
+
+  s.on('new_emergency_alert', (newCase: CaseRecord) => {
+    console.log('🚨 REAL-TIME EMERGENCY ALERT RECEIVED:', newCase);
+    onNewAlert(newCase);
+  });
+
+  s.on('case_status_updated', (data: { id: string; status: CaseStatus }) => {
+    onStatusUpdate(data);
+  });
+
+  s.on('case_deleted', (data: { id: string }) => {
+    if (onCaseDeleted) onCaseDeleted(data);
+  });
+
+  s.on('cases_reset', () => {
+    onReset();
+  });
+
+  return () => {
+    s.off('new_emergency_alert');
+    s.off('case_status_updated');
+    s.off('case_deleted');
+    s.off('cases_reset');
+  };
+}
