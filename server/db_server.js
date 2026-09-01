@@ -22,7 +22,7 @@ export async function initDbPool() {
     pool = mysql.createPool(dbConfig);
     const connection = await pool.getConnection();
     console.log('✅ Connected to MySQL Database db_stalert successfully (127.0.0.1:3306)');
-
+    
     // Auto Create Tables in db_stalert if they don't exist
     await connection.query(`
       CREATE TABLE IF NOT EXISTS \`hospitals\` (

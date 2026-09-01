@@ -3,6 +3,7 @@ import { Hospital as HospitalIcon, Clock, CheckCircle2, Navigation, Eye, Trash2,
 import { CaseRecord, CaseStatus, Hospital } from '../types/emergency';
 import { UrgencyRing, getUrgency, fmtRemaining } from '../components/UrgencyTimer';
 import { HospitalRecordForm } from '../components/HospitalRecordForm';
+import { fetchHospitalRecord } from '../services/api';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 
@@ -135,20 +136,17 @@ export const HospitalMonitorPage: React.FC<HospitalMonitorPageProps> = ({
   }, []);
 
   // Fetch recorded hospital forms status
-  const checkRecordedForms = () => {
-    cases.forEach(c => {
-      fetch(`/api/cases/${c.id}/hospital-record`)
-        .then(res => {
-          if (res.ok) return res.json();
-          return null;
-        })
-        .then(rec => {
-          if (rec && (rec.recorded_by || rec.er_arrival_time || rec.er_nihss)) {
-            setRecordedCaseIds(prev => new Set(prev).add(c.id));
-          }
-        })
-        .catch(() => {});
-    });
+  const checkRecordedForms = async () => {
+    const updatedSet = new Set<string>();
+    await Promise.all(
+      cases.map(async c => {
+        const rec = await fetchHospitalRecord(c.id);
+        if (rec && (rec.recorded_by || rec.er_arrival_time || rec.er_nihss)) {
+          updatedSet.add(c.id);
+        }
+      })
+    );
+    setRecordedCaseIds(updatedSet);
   };
 
   useEffect(() => {
@@ -700,6 +698,7 @@ export const HospitalMonitorPage: React.FC<HospitalMonitorPageProps> = ({
           onClose={() => setSelectedCaseForForm(null)}
           onSaved={() => {
             setSelectedCaseForForm(null);
+            checkRecordedForms();
             onRefresh();
           }}
         />
