@@ -735,6 +735,31 @@ async function sendMophNotifyAlert(caseItem) {
     }
   }
 
+  // Calculate Onset Golden Hour Status
+  let onsetDisplay = 'ไม่ระบุ';
+  let goldenHourTag = '⚡ stroke fast track';
+  if (caseItem.onset_iso) {
+    try {
+      const onsetTime = new Date(caseItem.onset_iso);
+      const diffMinutes = Math.floor((now.getTime() - onsetTime.getTime()) / (1000 * 60));
+      if (diffMinutes >= 0) {
+        const hours = Math.floor(diffMinutes / 60);
+        const mins = diffMinutes % 60;
+        const timeAgo = hours > 0 ? `${hours} ชม. ${mins} นาที` : `${mins} นาที`;
+
+        if (diffMinutes <= 270) { // 4.5 hours = 270 mins (Golden Hour for iv rTPA)
+          goldenHourTag = '⏱️ อยู่ใน Golden Hour (iv rTPA Candidate)';
+          onsetDisplay = `${timeAgo} ที่แล้ว (${goldenHourTag})`;
+        } else {
+          goldenHourTag = '⚠️ เกิน 4.5 ชม. (ประเมิน Thrombectomy Candidate)';
+          onsetDisplay = `${timeAgo} ที่แล้ว (${goldenHourTag})`;
+        }
+      }
+    } catch (e) {
+      onsetDisplay = caseItem.onset_iso;
+    }
+  }
+
   const bodyData = {
     messages: [
       {
