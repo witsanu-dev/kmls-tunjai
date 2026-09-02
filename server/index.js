@@ -333,11 +333,11 @@ let memoryCases = [
 ];
 
 const memoryHospitals = [
-  { id: 1, code: '11078', name: 'โรงพยาบาลกมลาไสย', level: 'โรงพยาบาลชุมชน (F2)', phone: '043-891008' },
-  { id: 2, code: 'HSP001', name: 'โรงพยาบาลมหาราช / ER Fast Track Center', level: 'รพ.ศูนย์ (Level 1)', phone: '044-234500' },
-  { id: 3, code: 'HSP002', name: 'โรงพยาบาลเทพรัตน์นครราชสีมา', level: 'รพ.ทั่วไป (Level 2)', phone: '044-395000' },
-  { id: 4, code: 'HSP003', name: 'โรงพยาบาลค่ายสุรนารี', level: 'รพ.สังกัดกระทรวงกลาโหม', phone: '044-255711' },
-  { id: 5, code: 'HSP004', name: 'โรงพยาบาลกรุงเทพ-ราชสีมา', level: 'รพ.เอกชน', phone: '044-015999' },
+  { id: 1, code: '11078', name: 'โรงพยาบาลกมลาไสย', level: 'โรงพยาบาลชุมชน (F2)', phone: '043 899 570 ต่อ 271', phone2: '043 899 570 ต่อ 666', phone3: '091 064 6395' },
+  { id: 2, code: 'HSP001', name: 'โรงพยาบาลมหาราช / ER Fast Track Center', level: 'รพ.ศูนย์ (Level 1)', phone: '044-234500', phone2: '044-234200', phone3: '1669' },
+  { id: 3, code: 'HSP002', name: 'โรงพยาบาลเทพรัตน์นครราชสีมา', level: 'รพ.ทั่วไป (Level 2)', phone: '044-395000', phone2: '044-395111', phone3: '1669' },
+  { id: 4, code: 'HSP003', name: 'โรงพยาบาลค่ายสุรนารี', level: 'รพ.สังกัดกระทรวงกลาโหม', phone: '044-255711', phone2: '044-255722', phone3: '1669' },
+  { id: 5, code: 'HSP004', name: 'โรงพยาบาลกรุงเทพ-ราชสีมา', level: 'รพ.เอกชน', phone: '044-015999', phone2: '044-015900', phone3: '1669' },
 ];
 
 // In-memory hospital records fallback

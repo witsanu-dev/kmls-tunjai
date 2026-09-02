@@ -31,11 +31,21 @@ export async function initDbPool() {
         \`name\` VARCHAR(255) NOT NULL,
         \`level\` VARCHAR(50) DEFAULT 'โรงพยาบาลศูนย์ / รพศ.',
         \`phone\` VARCHAR(50) DEFAULT '',
+        \`phone2\` VARCHAR(50) DEFAULT '',
+        \`phone3\` VARCHAR(50) DEFAULT '',
         \`address\` VARCHAR(255) DEFAULT '',
         \`is_active\` TINYINT(1) DEFAULT 1,
         \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     `);
+
+    // Ensure phone2 and phone3 columns exist in hospitals table
+    try {
+      await connection.query(`ALTER TABLE \`hospitals\` ADD COLUMN \`phone2\` VARCHAR(50) DEFAULT '';`);
+    } catch (e) { }
+    try {
+      await connection.query(`ALTER TABLE \`hospitals\` ADD COLUMN \`phone3\` VARCHAR(50) DEFAULT '';`);
+    } catch (e) { }
 
     await connection.query(`
       CREATE TABLE IF NOT EXISTS \`cases\` (
@@ -94,16 +104,25 @@ export async function initDbPool() {
       console.log('🌱 Seeded 12 default emergency cases into MySQL db_stalert');
     }
 
+    // Update Kamalasai Hospital phone numbers to exact requested values
+    await connection.query(`
+      UPDATE \`hospitals\`
+      SET \`phone\` = '043 899 570 ต่อ 271',
+          \`phone2\` = '043 899 570 ต่อ 666',
+          \`phone3\` = '091 064 6395'
+      WHERE \`code\` = '11078' OR \`name\` LIKE '%กมลาไสย%';
+    `);
+
     // Insert initial hospitals if table is empty
     const [hospRows] = await connection.query('SELECT COUNT(*) as count FROM hospitals');
     if (hospRows[0].count === 0) {
       await connection.query(`
-        INSERT INTO \`hospitals\` (\`code\`, \`name\`, \`level\`, \`phone\`, \`address\`) VALUES
-        ('11078', 'โรงพยาบาลกมลาไสย', 'โรงพยาบาลชุมชน (F2)', '043-891008', 'อ.กมลาไสย จ.กาฬสินธุ์'),
-        ('HSP001', 'โรงพยาบาลมหาราช / ER Fast Track Center', 'รพ.ศูนย์ (Level 1)', '044-234500', 'อ.เมือง จ.นครราชสีมา'),
-        ('HSP002', 'โรงพยาบาลเทพรัตน์นครราชสีมา', 'รพ.ทั่วไป (Level 2)', '044-395000', 'อ.เมือง จ.นครราชสีมา'),
-        ('HSP003', 'โรงพยาบาลค่ายสุรนารี', 'รพ.สังกัดกระทรวงกลาโหม', '044-255711', 'อ.เมือง จ.นครราชสีมา'),
-        ('HSP004', 'โรงพยาบาลกรุงเทพ-ราชสีมา', 'รพ.เอกชน', '044-015999', 'อ.เมือง จ.นครราชสีมา');
+        INSERT INTO \`hospitals\` (\`code\`, \`name\`, \`level\`, \`phone\`, \`phone2\`, \`phone3\`, \`address\`) VALUES
+        ('11078', 'โรงพยาบาลกมลาไสย', 'โรงพยาบาลชุมชน (F2)', '043 899 570 ต่อ 271', '043 899 570 ต่อ 666', '091 064 6395', 'อ.กมลาไสย จ.กาฬสินธุ์'),
+        ('HSP001', 'โรงพยาบาลมหาราช / ER Fast Track Center', 'รพ.ศูนย์ (Level 1)', '044-234500', '044-234200', '1669', 'อ.เมือง จ.นครราชสีมา'),
+        ('HSP002', 'โรงพยาบาลเทพรัตน์นครราชสีมา', 'รพ.ทั่วไป (Level 2)', '044-395000', '044-395111', '1669', 'อ.เมือง จ.นครราชสีมา'),
+        ('HSP003', 'โรงพยาบาลค่ายสุรนารี', 'รพ.สังกัดกระทรวงกลาโหม', '044-255711', '044-255722', '1669', 'อ.เมือง จ.นครราชสีมา'),
+        ('HSP004', 'โรงพยาบาลกรุงเทพ-ราชสีมา', 'รพ.เอกชน', '044-015999', '044-015900', '1669', 'อ.เมือง จ.นครราชสีมา');
       `);
       console.log('🌱 Seeded default hospitals into MySQL db_stalert');
     }

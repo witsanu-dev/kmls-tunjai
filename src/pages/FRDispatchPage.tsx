@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Send, User, Calendar, MapPin, AlertTriangle, CheckCircle, CheckCircle2, Siren, Globe, FileText } from 'lucide-react';
+import { Send, User, Calendar, MapPin, AlertTriangle, CheckCircle, CheckCircle2, Siren, Globe, FileText, Phone, Plus, Building2, Navigation } from 'lucide-react';
 import { MapPicker } from '../components/MapPicker';
 import { PhotoUploader } from '../components/PhotoUploader';
 import { FastAssessmentCard } from '../components/FastAssessmentCard';
-import { SearchableSelect } from '../components/SearchableSelect';
+import { SearchableSelect, SearchableSubdistrictSelect } from '../components/SearchableSelect';
 import { Hospital, NewCasePayload, CaseRecord } from '../types/emergency';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
@@ -67,10 +67,51 @@ export const FRDispatchPage: React.FC<FRDispatchPageProps> = ({
     setAge(String(next));
   };
 
+  // Arrival Type State & Auto-detection based on GPS
+  const [arrivalType, setArrivalType] = useState<'WALK IN' | 'EMS' | ''>('');
+
+  // Subdistrict state — each entry has tambon + amphoe for standardized data
+  interface SubdistrictEntry { tambon: string; amphoe: string; }
+  const DEFAULT_SUBDISTRICTS: SubdistrictEntry[] = [
+    { tambon: 'กมลาไสย',   amphoe: 'กมลาไสย' },
+    { tambon: 'หลักเมือง', amphoe: 'กมลาไสย' },
+    { tambon: 'โพนงาม',   amphoe: 'กมลาไสย' },
+    { tambon: 'ดงลิง',    amphoe: 'กมลาไสย' },
+    { tambon: 'ธัญญา',    amphoe: 'กมลาไสย' },
+    { tambon: 'หนองแปน',  amphoe: 'กมลาไสย' },
+    { tambon: 'เจ้าท่า',   amphoe: 'กมลาไสย' },
+    { tambon: 'โคกสมบูรณ์', amphoe: 'กมลาไสย' },
+  ];
+  const [subdistrictList, setSubdistrictList] = useState<SubdistrictEntry[]>(DEFAULT_SUBDISTRICTS);
+  const [selectedSubdistrictKey, setSelectedSubdistrictKey] = useState<string>('กมลาไสย|กมลาไสย');
+  const selectedSubdistrict = subdistrictList.find(
+    s => `${s.tambon}|${s.amphoe}` === selectedSubdistrictKey
+  ) || subdistrictList[0];
+
   // Location state
   const [locationText, setLocationText] = useState('');
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
+
+  // Auto-detect WALK-IN vs EMS based on GPS coordinates
+  useEffect(() => {
+    if (lat !== null && lng !== null) {
+      // Kamalasai Hospital GPS center - verified coordinates
+      const KAMALASAI_HOSP_LAT = 16.3367;
+      const KAMALASAI_HOSP_LNG = 103.5756;
+      const distanceKm = Math.sqrt(
+        Math.pow((lat - KAMALASAI_HOSP_LAT) * 111, 2) +
+        Math.pow((lng - KAMALASAI_HOSP_LNG) * 111 * Math.cos(KAMALASAI_HOSP_LAT * (Math.PI / 180)), 2)
+      );
+
+      // radius ~1.0 km to cover hospital campus and surrounding area
+      if (distanceKm <= 1.0) {
+        setArrivalType('WALK IN');
+      } else {
+        setArrivalType('EMS');
+      }
+    }
+  }, [lat, lng]);
 
   // Default Hospital: โรงพยาบาลกมลาไสย (code: 11078)
   const defaultKalasinHospital: Hospital = {
@@ -78,7 +119,9 @@ export const FRDispatchPage: React.FC<FRDispatchPageProps> = ({
     code: '11078',
     name: 'โรงพยาบาลกมลาไสย',
     level: 'โรงพยาบาลชุมชน (F2)',
-    phone: '043-891008',
+    phone: '043 899 570 ต่อ 271',
+    phone2: '043 899 570 ต่อ 666',
+    phone3: '091 064 6395',
   };
 
   const [selectedHospital, setSelectedHospital] = useState<Hospital>(
@@ -93,6 +136,67 @@ export const FRDispatchPage: React.FC<FRDispatchPageProps> = ({
     }
   }, [hospitals]);
 
+  // Prompt user to add new subdistrict (tambon + amphoe) — Restricted to Admin only
+  const handleAddNewSubdistrict = async () => {
+    if (user?.role !== 'admin') {
+      MySwal.fire({
+        icon: 'error',
+        title: 'สิทธิ์ไม่เพียงพอ (Access Denied)',
+        text: 'การเพิ่มข้อมูลตำบลมาตรฐานในระบบ สามารถทำได้เฉพาะผู้ดูแลระบบ (Admin) เท่านั้น',
+        confirmButtonColor: '#ef4444',
+      });
+      return;
+    }
+
+    // Step 1: get amphoe
+    const amphoeRes = await MySwal.fire({
+      title: 'เพิ่มพื้นที่บริการใหม่',
+      html: '<div class="text-sm text-slate-600 mb-2">ขั้นตอนที่ 1/2 — ระบุ <b>ชื่ออำเภอ</b></div>',
+      input: 'text',
+      inputPlaceholder: 'เช่น กมลาไสย, สหัสขันธ์, ยางตลาด',
+      showCancelButton: true,
+      confirmButtonText: 'ถัดไป →',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#0d9488',
+      inputValidator: (val) => {
+        if (!val || !val.trim()) return 'กรุณาระบุชื่ออำเภอ';
+        return null;
+      },
+    });
+    if (!amphoeRes.isConfirmed) return;
+    const newAmphoe = amphoeRes.value.trim();
+
+    // Step 2: get tambon
+    const tambonRes = await MySwal.fire({
+      title: 'เพิ่มพื้นที่บริการใหม่',
+      html: `<div class="text-sm text-slate-600 mb-2">ขั้นตอนที่ 2/2 — ระบุ <b>ชื่อตำบล</b> ใน อ.${newAmphoe}</div>`,
+      input: 'text',
+      inputPlaceholder: 'เช่น หนองตาด, นาเชือก',
+      showCancelButton: true,
+      confirmButtonText: 'เพิ่ม',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#0d9488',
+      inputValidator: (val) => {
+        if (!val || !val.trim()) return 'กรุณาระบุชื่อตำบล';
+        if (subdistrictList.some(s => s.tambon === val.trim() && s.amphoe === newAmphoe))
+          return 'มีตำบลนี้ในรายการแล้ว';
+        return null;
+      },
+    });
+    if (!tambonRes.isConfirmed) return;
+    const newTambon = tambonRes.value.trim();
+
+    const newEntry = { tambon: newTambon, amphoe: newAmphoe };
+    setSubdistrictList((prev) => [...prev, newEntry]);
+    setSelectedSubdistrictKey(`${newTambon}|${newAmphoe}`);
+    MySwal.fire({
+      icon: 'success',
+      title: `เพิ่ม "ต.${newTambon} อ.${newAmphoe}" เรียบร้อยแล้ว`,
+      timer: 1400,
+      showConfirmButton: false,
+    });
+  };
+
   // FAST & NIHSS state
   const [face, setFace] = useState(false);
   const [arm, setArm] = useState(false);
@@ -101,10 +205,123 @@ export const FRDispatchPage: React.FC<FRDispatchPageProps> = ({
   const [nihssTotal, setNihssTotal] = useState<number | null>(null);
   const [nihssSeverity, setNihssSeverity] = useState<string | null>(null);
 
+  // Modal for adding a new hospital destination — Restricted to Admin only
+  const handleAddNewHospital = async () => {
+    if (user?.role !== 'admin') {
+      MySwal.fire({
+        icon: 'error',
+        title: 'สิทธิ์ไม่เพียงพอ (Access Denied)',
+        text: 'การเพิ่มข้อมูลโรงพยาบาลมาตรฐานในระบบ สามารถทำได้เฉพาะผู้ดูแลระบบ (Admin) เท่านั้น',
+        confirmButtonColor: '#ef4444',
+      });
+      return;
+    }
+
+    const res = await MySwal.fire({
+      title: 'เพิ่มโรงพยาบาลปลายทาง',
+      customClass: {
+        popup: '!w-full !max-w-lg',
+      },
+      html: `
+        <div class="text-left text-xs space-y-3 p-1">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">รหัสหน่วยบริการ (5 หลัก) <span class="text-rose-500">*</span></label>
+              <input id="swal-hosp-code" type="text" maxlength="5" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,5)" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-teal-500 font-mono" placeholder="เช่น 11080" />
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ระดับ / ประเภทสถานพยาบาล</label>
+              <input id="swal-hosp-level" type="text" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-teal-500" placeholder="เช่น โรงพยาบาลชุมชน (F2)" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ชื่อโรงพยาบาล <span class="text-rose-500">*</span></label>
+            <input id="swal-hosp-name" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-teal-500 font-semibold" placeholder="เช่น โรงพยาบาลยางตลาด" />
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ที่อยู่ / ที่ตั้งสถานพยาบาล</label>
+            <input id="swal-hosp-address" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-teal-500" placeholder="เช่น อ.ยางตลาด จ.กาฬสินธุ์" />
+          </div>
+
+          <div class="border-t border-slate-200 pt-2.5">
+            <div class="font-bold text-slate-800 text-xs mb-2 flex items-center gap-1 text-teal-700">
+              ช่องทางติดต่อฉุกเฉินด่วน
+            </div>
+
+            <div class="space-y-2">
+              <div>
+                <label class="block font-bold text-slate-600 text-[11px] mb-0.5">1. เบอร์ห้องฉุกเฉิน 1</label>
+                <input id="swal-hosp-phone1" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-800 font-mono focus:outline-none focus:ring-1 focus:ring-teal-500" placeholder="เช่น 043 891 111 ต่อ 201" />
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-600 text-[11px] mb-0.5">2. เบอร์ห้องฉุกเฉิน 2</label>
+                <input id="swal-hosp-phone2" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-800 font-mono focus:outline-none focus:ring-1 focus:ring-teal-500" placeholder="เช่น 043 891 111 ต่อ 666 (ถ้ามี)" />
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-600 text-[11px] mb-0.5">3. เบอร์มือถือฉุกเฉิน</label>
+                <input id="swal-hosp-phone3" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-800 font-mono focus:outline-none focus:ring-1 focus:ring-teal-500" placeholder="เช่น 089 123 4567 (ถ้ามี)" />
+              </div>
+            </div>
+          </div>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'บันทึกโรงพยาบาล',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#0d9488',
+      preConfirm: () => {
+        const name = (document.getElementById('swal-hosp-name') as HTMLInputElement)?.value.trim();
+        const code = (document.getElementById('swal-hosp-code') as HTMLInputElement)?.value.trim();
+        const level = (document.getElementById('swal-hosp-level') as HTMLInputElement)?.value.trim();
+        const address = (document.getElementById('swal-hosp-address') as HTMLInputElement)?.value.trim();
+        const phone = (document.getElementById('swal-hosp-phone1') as HTMLInputElement)?.value.trim();
+        const phone2 = (document.getElementById('swal-hosp-phone2') as HTMLInputElement)?.value.trim();
+        const phone3 = (document.getElementById('swal-hosp-phone3') as HTMLInputElement)?.value.trim();
+
+        if (!code || !/^\d{5}$/.test(code)) {
+          Swal.showValidationMessage('กรุณาระบุรหัสหน่วยบริการเป็นตัวเลข 5 หลัก (เช่น 11080)');
+          return false;
+        }
+
+        if (!name) {
+          Swal.showValidationMessage('กรุณาระบุชื่อโรงพยาบาล');
+          return false;
+        }
+
+        return {
+          id: Date.now(),
+          code,
+          name,
+          level: level || 'โรงพยาบาลชุมชน (F2)',
+          address: address || '',
+          phone: phone || '',
+          phone2: phone2 || '',
+          phone3: phone3 || '',
+        } as Hospital;
+      },
+    });
+
+    if (res.isConfirmed && res.value) {
+      const newHosp = res.value as Hospital;
+      setSelectedHospital(newHosp);
+      MySwal.fire({
+        icon: 'success',
+        title: `เพิ่ม "${newHosp.name}" เรียบร้อยแล้ว`,
+        timer: 1400,
+        showConfirmButton: false,
+      });
+    }
+  };
+
   const [submitting, setSubmitting] = useState(false);
 
   const fastCount = [face, arm, speech].filter(Boolean).length;
-  const canSubmit = Boolean(onset) && locationText.trim().length > 0 && fastCount >= 1 && frName.trim().length > 0;
+  // Relaxed submit condition so non-Fast Track / emergency cases without onset/fast can be dispatched smoothly
+  const canSubmit = frName.trim().length > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,7 +330,7 @@ export const FRDispatchPage: React.FC<FRDispatchPageProps> = ({
       MySwal.fire({
         icon: 'warning',
         title: 'ข้อมูลไม่ครบถ้วน',
-        text: 'กรุณาระบุชื่อผู้แจ้งเหตุ, ตำแหน่งที่พบผู้ป่วย, เวลาที่พบอาการปกติล่าสุด และประเมิน FAST อย่างน้อย 1 ข้อ',
+        text: 'กรุณาระบุชื่อผู้แจ้งเหตุในระบบ',
         confirmButtonColor: '#0d9488',
       });
       return;
@@ -125,6 +342,7 @@ export const FRDispatchPage: React.FC<FRDispatchPageProps> = ({
         <div class="text-left text-xs space-y-1.5 p-2 bg-slate-50 rounded border border-slate-200">
           <div><b>ผู้แจ้งเหตุ:</b> ${frName}</div>
           <div><b>ผู้ป่วย:</b> ${patientName || 'ไม่ทราบชื่อ'} (อายุ ${age || '-'} ปี, ${sex})</div>
+          <div><b>ประเภทการมา:</b> ${arrivalType || 'ไม่ระบุ'} | <b>ตำบล:</b> ต.${selectedSubdistrict?.tambon} อ.${selectedSubdistrict?.amphoe}</div>
           <div><b>โรงพยาบาลปลายทาง:</b> ${selectedHospital.name}</div>
           <div><b>อาการ FAST:</b> ${fastCount}/3 ข้อ</div>
         </div>
@@ -148,7 +366,7 @@ export const FRDispatchPage: React.FC<FRDispatchPageProps> = ({
         sex,
         id_photo_url: idPhotoUrl,
         additional_photos: additionalPhotos,
-        location: locationText.trim(),
+        location: `${locationText.trim()}${selectedSubdistrict ? ` (ต.${selectedSubdistrict.tambon} อ.${selectedSubdistrict.amphoe})` : ''}${arrivalType ? ` [${arrivalType}]` : ''}`,
         latitude: lat,
         longitude: lng,
         hospital_id: selectedHospital.id,
@@ -156,7 +374,7 @@ export const FRDispatchPage: React.FC<FRDispatchPageProps> = ({
         face,
         arm,
         speech,
-        onset_iso: new Date(onset).toISOString(),
+        onset_iso: onset ? new Date(onset).toISOString() : new Date().toISOString(),
         nihss_total: nihssTotal,
         nihss_severity: nihssSeverity,
       });
@@ -181,6 +399,27 @@ export const FRDispatchPage: React.FC<FRDispatchPageProps> = ({
     setSubmitting(false);
   };
 
+  // Smart Gender Auto-Detector based on Name Prefixes
+  const handlePatientNameChange = (val: string) => {
+    setPatientName(val);
+    const trimmed = val.trim();
+    if (!trimmed) {
+      setSex('ไม่ระบุ');
+      return;
+    }
+
+    // Male prefixes (Thai & English)
+    const MALE_PREFIX_REGEX = /^(นาย|ด\.ช\.|เด็กชาย|มร\.|นายแพทย์|นพ\.|พระ|พระครู|พระมหา|หลวงพ่อ|หลวงปู่|หลวงตา|Mr\.|Mr\b|Master\b)/i;
+    // Female prefixes (Thai & English)
+    const FEMALE_PREFIX_REGEX = /^(นางสาว|นาง|น\.ส\.|ด\.ญ\.|เด็กหญิง|แพทย์หญิง|พญ\.|คุณหญิง|คุณนาย|ท่านผู้หญิง|Mrs\.|Miss\b|Ms\.|Ms\b)/i;
+
+    if (MALE_PREFIX_REGEX.test(trimmed)) {
+      setSex('ชาย');
+    } else if (FEMALE_PREFIX_REGEX.test(trimmed)) {
+      setSex('หญิง');
+    }
+  };
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Header Banner */}
@@ -195,27 +434,23 @@ export const FRDispatchPage: React.FC<FRDispatchPageProps> = ({
           </p>
         </div>
         <div className="bg-white/10 backdrop-blur-xs px-3 py-2 rounded-md text-right text-xs">
-          <div className="font-bold">ศูนย์รับแจ้งเหตุ 24 ชม.</div>
-          <div className="text-[11px] text-teal-200">System: Active</div>
+          <div className="font-bold">ศูนย์รับแจ้งเหตุฉุกเฉิน 24 ชั่วโมง</div>
+          <div className="text-[11px] text-teal-200">System: Online 24/7</div>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Section 1: Responder & Patient Info */}
         <div className="bg-white border border-slate-200 rounded-md p-4 shadow-sm space-y-4">
-          <h3 className="font-bold text-slate-800 text-sm flex items-center justify-between border-b pb-2 border-slate-100">
-            <span className="flex items-center gap-2">
-              <User className="w-4 h-4 text-teal-600" />
-              ข้อมูลผู้แจ้งเหตุและผู้ป่วย (Medical Record)
-            </span>
-            <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-              มาตรฐานการแพทย์ EMS
-            </span>
+          <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 border-b pb-2 border-slate-100">
+            <User className="w-4 h-4 text-teal-600" />
+            ข้อมูลผู้แจ้งเหตุและผู้ป่วย (Medical Record)
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Responder Name locked from Auth System for transparency */}
-            <div>
+
+            {/* Responder Name — full width (col-12) */}
+            <div className="sm:col-span-2">
               <label className="block text-xs font-bold text-slate-700 mb-1">
                 ชื่อเจ้าหน้าที่ผู้แจ้งเหตุ / หน่วยบริการกู้ชีพ
               </label>
@@ -224,7 +459,7 @@ export const FRDispatchPage: React.FC<FRDispatchPageProps> = ({
                   type="text"
                   readOnly
                   value={frName || 'ผู้ใช้งานในระบบ'}
-                  className="w-full bg-slate-100 border border-slate-300 text-slate-800 text-sm font-semibold rounded-md pl-3 pr-24 py-2 outline-none cursor-default"
+                  className="w-full bg-slate-100 border border-slate-300 text-slate-800 text-sm font-semibold rounded-md pl-3 pr-28 py-2 outline-none cursor-default"
                 />
                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-teal-700 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-md flex items-center gap-1">
                   <CheckCircle2 className="w-3 h-3 text-teal-600 shrink-0" />
@@ -242,20 +477,14 @@ export const FRDispatchPage: React.FC<FRDispatchPageProps> = ({
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
-                    onClick={() => {
-                      setPatientName('ไม่ทราบชื่อ');
-                      setSex('ชาย');
-                    }}
+                    onClick={() => { setPatientName('ไม่ทราบชื่อ'); setSex('ชาย'); }}
                     className="text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-700 px-1.5 py-0.5 rounded font-medium transition-colors"
                   >
                     + ไม่ทราบชื่อ (ชาย)
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      setPatientName('ไม่ทราบชื่อ');
-                      setSex('หญิง');
-                    }}
+                    onClick={() => { setPatientName('ไม่ทราบชื่อ'); setSex('หญิง'); }}
                     className="text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-700 px-1.5 py-0.5 rounded font-medium transition-colors"
                   >
                     + ไม่ทราบชื่อ (หญิง)
@@ -265,43 +494,31 @@ export const FRDispatchPage: React.FC<FRDispatchPageProps> = ({
               <input
                 type="text"
                 value={patientName}
-                onChange={(e) => setPatientName(e.target.value)}
+                onChange={(e) => handlePatientNameChange(e.target.value)}
                 placeholder="เช่น นายสมศักดิ์ รุ่งเรือง หรือกดปุ่มไม่ทราบชื่อ"
                 className="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-md px-3 py-2 focus:ring-2 focus:ring-teal-500 outline-none font-medium"
               />
             </div>
 
-            {/* Patient ID / Passport Field (Compact 1-Column Layout) */}
+            {/* Patient ID / Passport Field */}
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-xs font-bold text-slate-700">
                   {idType === 'thai' ? 'เลขบัตรประชาชน (13 หลัก)' : 'เลขพาสปอร์ต / ต่างด้าว'}
                 </label>
-
-                {/* Compact ID Type Switcher */}
                 <button
                   type="button"
-                  onClick={() => {
-                    setIdType(idType === 'thai' ? 'foreigner' : 'thai');
-                    setPatientCid('');
-                  }}
+                  onClick={() => { setIdType(idType === 'thai' ? 'foreigner' : 'thai'); setPatientCid(''); }}
                   className="text-[10px] text-teal-700 font-bold bg-teal-50 hover:bg-teal-100 border border-teal-200 px-2 py-0.5 rounded flex items-center gap-1 transition-colors"
                   title="คลิกเพื่อสลับระหว่างสัญชาติไทยและชาวต่างชาติ"
                 >
                   {idType === 'thai' ? (
-                    <>
-                      <FileText className="w-3 h-3 text-teal-600" />
-                      <span>ต่างชาติ/พาสปอร์ต</span>
-                    </>
+                    <><FileText className="w-3 h-3 text-teal-600" /><span>ต่างชาติ/พาสปอร์ต</span></>
                   ) : (
-                    <>
-                      <Globe className="w-3 h-3 text-teal-600" />
-                      <span>บัตรประชาชนไทย</span>
-                    </>
+                    <><Globe className="w-3 h-3 text-teal-600" /><span>บัตรประชาชนไทย</span></>
                   )}
                 </button>
               </div>
-
               {idType === 'thai' ? (
                 <div className="relative">
                   <input
@@ -330,7 +547,7 @@ export const FRDispatchPage: React.FC<FRDispatchPageProps> = ({
               )}
             </div>
 
-            {/* Age with Stepper & Presets */}
+            {/* Age with Stepper & Presets — col-6 */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">
                 อายุโดยประมาณ (ปี)
@@ -375,7 +592,63 @@ export const FRDispatchPage: React.FC<FRDispatchPageProps> = ({
               </div>
             </div>
 
-            {/* Sex Selector */}
+            {/* Arrival Type — col-6, paired with Age */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                ประเภทการมา
+              </label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setArrivalType('WALK IN')}
+                  className={`flex-1 py-2 px-3 text-xs font-bold rounded-md border transition-all flex items-center justify-center gap-1.5 ${
+                    arrivalType === 'WALK IN'
+                      ? 'bg-teal-600 text-white border-teal-600 shadow-xs'
+                      : 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="arrivalType"
+                    checked={arrivalType === 'WALK IN'}
+                    onChange={() => setArrivalType('WALK IN')}
+                    className="accent-teal-600 cursor-pointer"
+                  />
+                  <span>WALK IN</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setArrivalType('EMS')}
+                  className={`flex-1 py-2 px-3 text-xs font-bold rounded-md border transition-all flex items-center justify-center gap-1.5 ${
+                    arrivalType === 'EMS'
+                      ? 'bg-teal-600 text-white border-teal-600 shadow-xs'
+                      : 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="arrivalType"
+                    checked={arrivalType === 'EMS'}
+                    onChange={() => setArrivalType('EMS')}
+                    className="accent-teal-600 cursor-pointer"
+                  />
+                  <span>EMS</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Searchable Subdistrict Dropdown */}
+            <div className="sm:col-span-2">
+              <SearchableSubdistrictSelect
+                items={subdistrictList}
+                selectedKey={selectedSubdistrictKey}
+                onSelect={(key) => setSelectedSubdistrictKey(key)}
+                selectedSubdistrict={selectedSubdistrict}
+                onAddNew={user?.role === 'admin' ? handleAddNewSubdistrict : undefined}
+              />
+            </div>
+
+            {/* Sex Selector — full width */}
             <div className="sm:col-span-2">
               <label className="block text-xs font-bold text-slate-700 mb-1">
                 เพศผู้ป่วย
@@ -386,9 +659,10 @@ export const FRDispatchPage: React.FC<FRDispatchPageProps> = ({
                     key={s}
                     type="button"
                     onClick={() => setSex(s)}
-                    className={`flex-1 py-2 text-xs font-bold rounded-md border transition-colors shadow-xs ${sex === s
-                        ? 'bg-teal-600 text-white border-teal-600'
-                        : 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100'
+                    className={`flex-1 py-2 text-xs font-bold rounded-md border transition-colors shadow-xs ${
+                        sex === s
+                          ? 'bg-teal-600 text-white border-teal-600'
+                          : 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100'
                       }`}
                   >
                     {s}
@@ -417,13 +691,108 @@ export const FRDispatchPage: React.FC<FRDispatchPageProps> = ({
           setLng={setLng}
         />
 
-        {/* Section 4: Searchable Select Hospital */}
-        <div className="bg-white border border-slate-200 rounded-md p-4 shadow-sm">
+        {/* Section 4: Searchable Select Hospital & Real-time Emergency Phones */}
+        <div className="bg-white border border-slate-200 rounded-md p-4 shadow-sm space-y-4">
           <SearchableSelect
             hospitals={hospitals}
             selectedHospitalId={selectedHospital.id}
             onSelectHospital={(h) => setSelectedHospital(h)}
+            onAddNewHospital={user?.role === 'admin' ? handleAddNewHospital : undefined}
           />
+
+          {/* Emergency Phone Contact Cards */}
+          <div className="bg-slate-50 border border-slate-200 rounded-md p-3 space-y-2">
+            <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <Phone className="w-4 h-4 text-emerald-600" />
+              <span>เบอร์โทรศัพท์ติดต่อฉุกเฉินด่วน <b className="text-teal-700">{selectedHospital.name}</b></span>
+            </span>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {/* Phone Line 1 */}
+              {selectedHospital.phone ? (
+                <a
+                  href={`tel:${selectedHospital.phone.replace(/\D/g, '')}`}
+                  className="flex items-center gap-2 p-2 rounded-md bg-white border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 transition-all shadow-xs group"
+                >
+                  <div className="w-7 h-7 rounded-full bg-teal-100 text-teal-700 group-hover:bg-teal-600 group-hover:text-white flex items-center justify-center transition-colors shrink-0">
+                    <Phone className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-semibold text-slate-500">เบอร์ห้องฉุกเฉิน 1</div>
+                    <div className="text-xs font-bold text-slate-800 font-mono group-hover:text-teal-700">
+                      {selectedHospital.phone}
+                    </div>
+                  </div>
+                </a>
+              ) : (
+                <div className="flex items-center gap-2 p-2 rounded-md bg-slate-100/70 border border-slate-200 opacity-40 select-none">
+                  <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-400 flex items-center justify-center shrink-0">
+                    <Phone className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-semibold text-slate-400">เบอร์ห้องฉุกเฉิน 1</div>
+                    <div className="text-xs font-bold text-slate-400">ไม่ระบุเบอร์</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Phone Line 2 */}
+              {selectedHospital.phone2 ? (
+                <a
+                  href={`tel:${selectedHospital.phone2.replace(/\D/g, '')}`}
+                  className="flex items-center gap-2 p-2 rounded-md bg-white border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 transition-all shadow-xs group"
+                >
+                  <div className="w-7 h-7 rounded-full bg-teal-100 text-teal-700 group-hover:bg-teal-600 group-hover:text-white flex items-center justify-center transition-colors shrink-0">
+                    <Phone className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-semibold text-slate-500">เบอร์ห้องฉุกเฉิน 2</div>
+                    <div className="text-xs font-bold text-slate-800 font-mono group-hover:text-teal-700">
+                      {selectedHospital.phone2}
+                    </div>
+                  </div>
+                </a>
+              ) : (
+                <div className="flex items-center gap-2 p-2 rounded-md bg-slate-100/70 border border-slate-200 opacity-40 select-none">
+                  <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-400 flex items-center justify-center shrink-0">
+                    <Phone className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-semibold text-slate-400">เบอร์ห้องฉุกเฉิน 2</div>
+                    <div className="text-xs font-bold text-slate-400">ไม่ระบุเบอร์</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Phone Line 3 */}
+              {selectedHospital.phone3 ? (
+                <a
+                  href={`tel:${selectedHospital.phone3.replace(/\D/g, '')}`}
+                  className="flex items-center gap-2 p-2 rounded-md bg-rose-50 border border-rose-200 hover:border-rose-400 hover:bg-rose-100/70 transition-all shadow-xs group"
+                >
+                  <div className="w-7 h-7 rounded-full bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <Phone className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-bold text-rose-700">เบอร์มือถือฉุกเฉิน</div>
+                    <div className="text-xs font-black text-rose-800 font-mono group-hover:text-rose-900">
+                      {selectedHospital.phone3}
+                    </div>
+                  </div>
+                </a>
+              ) : (
+                <div className="flex items-center gap-2 p-2 rounded-md bg-slate-100/70 border border-slate-200 opacity-40 select-none">
+                  <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-400 flex items-center justify-center shrink-0">
+                    <Phone className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-semibold text-slate-400">เบอร์มือถือฉุกเฉิน</div>
+                    <div className="text-xs font-bold text-slate-400">ไม่ระบุเบอร์</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Section 5: FAST Assessment Checklist & Onset Time */}
@@ -441,21 +810,11 @@ export const FRDispatchPage: React.FC<FRDispatchPageProps> = ({
           <button
             type="submit"
             disabled={submitting}
-            className={`w-full py-4 px-6 rounded-md text-white font-bold text-base shadow-md flex items-center justify-center gap-2 transition-all ${canSubmit
-                ? 'bg-rose-600 hover:bg-rose-700 active:scale-[0.99] cursor-pointer'
-                : 'bg-slate-400 cursor-not-allowed opacity-75'
-              }`}
+            className="w-full py-4 px-6 rounded-md text-white font-bold text-base shadow-md flex items-center justify-center gap-2 transition-all bg-rose-600 hover:bg-rose-700 active:scale-[0.99] cursor-pointer"
           >
             <Siren className={`w-5 h-5 ${submitting ? 'animate-bounce' : ''}`} />
             <span>{submitting ? 'กำลังส่งสัญญาณเตือนภัย...' : 'ส่งสัญญาณเตือนด่วน ไปยัง รพ. ปลายทาง'}</span>
           </button>
-
-          {!canSubmit && (
-            <p className="text-center text-xs text-rose-500 mt-2 flex items-center justify-center gap-1">
-              <AlertTriangle className="w-3.5 h-3.5" />
-              กรุณากรอกชื่อผู้แจ้ง, ตำแหน่งที่พบผู้ป่วย, เวลา Onset และประเมิน FAST อย่างน้อย 1 ข้อ
-            </p>
-          )}
         </div>
       </form>
     </div>

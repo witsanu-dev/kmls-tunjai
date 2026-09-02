@@ -36,6 +36,8 @@ export interface Hospital {
   name: string;
   level: string;
   phone: string;
+  phone2?: string;
+  phone3?: string;
   address?: string;
 }
 
