@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Hospital as HospitalIcon, Clock, CheckCircle2, Navigation, Eye, Trash2, RefreshCw, AlertTriangle, UserCheck, Siren, MapPin, Map, RotateCcw, Timer, Activity, TrendingUp, CalendarClock, FileText, Images, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Hospital as HospitalIcon, Clock, CheckCircle2, Navigation, Eye, Trash2, RefreshCw, AlertTriangle, UserCheck, Siren, MapPin, Map, RotateCcw, Timer, Activity, TrendingUp, CalendarClock, FileText, Images, X, ChevronDown, ChevronUp, ShieldOff } from 'lucide-react';
 import { CaseRecord, CaseStatus, Hospital } from '../types/emergency';
 import { UrgencyRing, getUrgency, fmtRemaining } from '../components/UrgencyTimer';
 import { HospitalRecordForm } from '../components/HospitalRecordForm';
 import { fetchHospitalRecord } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 
@@ -125,10 +126,22 @@ export const HospitalMonitorPage: React.FC<HospitalMonitorPageProps> = ({
   onRefresh,
   onResetAll,
 }) => {
+  const { user } = useAuth();
   const [nowMs, setNowMs] = useState(Date.now());
-  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'done'>('active');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'done' | 'mine'>('active');
   const [selectedCaseForForm, setSelectedCaseForForm] = useState<CaseRecord | null>(null);
   const [recordedCaseIds, setRecordedCaseIds] = useState<Set<string>>(new Set());
+
+  // ── Role-Based Permission Matrix ──────────────────────────────────────────
+  // FR (fr_dispatch): View only — ไม่สามารถรับเคส/อัปเดตสถานะ/ลบ/กรอกแบบบันทึก รพ.
+  // ER Staff / Admin: สิทธิเต็ม — รับเคส อัปเดตสถานะ กรอกแบบบันทึก ลบ ยกเลิกสถานะ
+  const role = user?.role ?? 'fr_dispatch';
+  const canAccept     = role === 'er_staff' || role === 'admin';
+  const canArrive     = role === 'er_staff' || role === 'admin';
+  const canRevert     = role === 'er_staff' || role === 'admin';
+  const canFillForm   = role === 'er_staff' || role === 'admin';
+  const canDeleteCase = role === 'er_staff' || role === 'admin';
+  const canResetAll   = role === 'admin';
 
   useEffect(() => {
     const timer = setInterval(() => setNowMs(Date.now()), 1000);
@@ -155,10 +168,12 @@ export const HospitalMonitorPage: React.FC<HospitalMonitorPageProps> = ({
 
   const activeCases = cases.filter(c => c.status !== 'arrived');
   const doneCases = cases.filter(c => c.status === 'arrived');
+  const myCases = cases.filter(c => c.fr_name === user?.full_name);
 
   const displayedCases = cases.filter(c => {
     if (filterStatus === 'active') return c.status !== 'arrived';
     if (filterStatus === 'done') return c.status === 'arrived';
+    if (filterStatus === 'mine') return c.fr_name === user?.full_name;
     return true;
   });
 
@@ -293,53 +308,122 @@ export const HospitalMonitorPage: React.FC<HospitalMonitorPageProps> = ({
             <span>รีเฟรชข้อมูล</span>
           </button>
 
-          <button
-            type="button"
-            onClick={handleResetConfirm}
-            className="flex items-center justify-center p-2 text-rose-600 hover:bg-rose-50 rounded-md text-xs border border-rose-200 transition-colors"
-            title="ล้างข้อมูลเคสทั้งหมด"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          {canResetAll && (
+            <button
+              type="button"
+              onClick={handleResetConfirm}
+              className="flex items-center justify-center p-2 text-rose-600 hover:bg-rose-50 rounded-md text-xs border border-rose-200 transition-colors"
+              title="ล้างข้อมูลเคสทั้งหมด (Admin เท่านั้น)"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
-        <button
-          type="button"
-          onClick={() => setFilterStatus('active')}
-          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-bold transition-colors cursor-pointer ${filterStatus === 'active'
-              ? `bg-rose-600 text-white shadow-xs ${activeCases.length > 0 ? 'alert-spread-pulse-red' : ''}`
-              : `bg-slate-100 text-slate-600 hover:bg-slate-200 ${activeCases.length > 0 ? 'alert-spread-pulse-red font-extrabold text-rose-700' : ''}`
-            }`}
-        >
-          <Siren className="w-3.5 h-3.5" />
-          <span>กำลังรอดำเนินการ ({activeCases.length})</span>
-        </button>
+      {/* Filter Tabs — Modern responsive scrollable pill bar */}
+      <div className="relative">
+        {/* Scroll container */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1">
 
-        <button
-          type="button"
-          onClick={() => setFilterStatus('done')}
-          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-bold transition-colors ${filterStatus === 'done'
-              ? 'bg-emerald-600 text-white shadow-xs'
-              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          {/* กำลังรอดำเนินการ */}
+          <button
+            type="button"
+            onClick={() => setFilterStatus('active')}
+            className={`shrink-0 relative flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-md text-xs font-bold transition-all duration-200 cursor-pointer border ${
+              filterStatus === 'active'
+                ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
+                : `border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300 ${activeCases.length > 0 ? 'text-rose-700' : ''}`
             }`}
-        >
-          <CheckCircle2 className="w-3.5 h-3.5" />
-          <span>ถึง รพ. แล้ว ({doneCases.length})</span>
-        </button>
+          >
+            <Siren className={`w-3.5 h-3.5 shrink-0 ${filterStatus !== 'active' && activeCases.length > 0 ? 'text-rose-500' : ''}`} />
+            <span className="whitespace-nowrap">กำลังรอดำเนินการ</span>
+            <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-md text-[10px] font-extrabold leading-none ${
+              filterStatus === 'active'
+                ? 'bg-white/25 text-white'
+                : activeCases.length > 0
+                  ? 'bg-rose-100 text-rose-700'
+                  : 'bg-slate-100 text-slate-500'
+            }`}>
+              {activeCases.length}
+            </span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setFilterStatus('all')}
-          className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-colors ${filterStatus === 'all'
-              ? 'bg-slate-800 text-white shadow-xs'
-              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          {/* ถึง รพ. แล้ว */}
+          <button
+            type="button"
+            onClick={() => setFilterStatus('done')}
+            className={`shrink-0 flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-md text-xs font-bold transition-all duration-200 border ${
+              filterStatus === 'done'
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
             }`}
-        >
-          รายการทั้งหมด ({cases.length})
-        </button>
+          >
+            <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+            <span className="whitespace-nowrap">ถึง รพ. แล้ว</span>
+            <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-md text-[10px] font-extrabold leading-none ${
+              filterStatus === 'done'
+                ? 'bg-white/25 text-white'
+                : 'bg-emerald-100 text-emerald-700'
+            }`}>
+              {doneCases.length}
+            </span>
+          </button>
+
+          {/* รายการทั้งหมด */}
+          <button
+            type="button"
+            onClick={() => setFilterStatus('all')}
+            className={`shrink-0 flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-md text-xs font-bold transition-all duration-200 border ${
+              filterStatus === 'all'
+                ? 'bg-slate-800 text-white border-slate-800 shadow-sm'
+                : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
+            }`}
+          >
+            <Activity className="w-3.5 h-3.5 shrink-0" />
+            <span className="whitespace-nowrap">ทั้งหมด</span>
+            <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-md text-[10px] font-extrabold leading-none ${
+              filterStatus === 'all'
+                ? 'bg-white/25 text-white'
+                : 'bg-slate-100 text-slate-500'
+            }`}>
+              {cases.length}
+            </span>
+          </button>
+
+          {/* Divider */}
+          <div className="shrink-0 h-6 w-px bg-slate-200 mx-1" />
+
+          {/* เคสของฉัน — only show when user is logged-in */}
+          {user && (
+            <button
+              type="button"
+              onClick={() => setFilterStatus('mine')}
+              className={`shrink-0 flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-md text-xs font-bold transition-all duration-200 border ${
+                filterStatus === 'mine'
+                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                  : myCases.length > 0
+                    ? 'border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100'
+                    : 'border-slate-200 text-slate-500 bg-white hover:bg-slate-50'
+              }`}
+            >
+              <UserCheck className="w-3.5 h-3.5 shrink-0" />
+              <span className="whitespace-nowrap">เคสของฉัน</span>
+              <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-md text-[10px] font-extrabold leading-none ${
+                filterStatus === 'mine'
+                  ? 'bg-white/25 text-white'
+                  : myCases.length > 0
+                    ? 'bg-indigo-100 text-indigo-700'
+                    : 'bg-slate-100 text-slate-400'
+              }`}>
+                {myCases.length}
+              </span>
+            </button>
+          )}
+        </div>
+
+        {/* Bottom border line */}
+        <div className="h-px bg-slate-200 mt-2" />
       </div>
 
       {/* Cases List */}
@@ -587,7 +671,23 @@ export const HospitalMonitorPage: React.FC<HospitalMonitorPageProps> = ({
                 <div className="mt-3 pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
                   {/* Left Group: Primary Actions & Revert Buttons */}
                   <div className="flex flex-wrap items-center gap-2">
-                    {c.status === 'new' && (
+
+                    {/* FR View-Only Notice */}
+                    {!canAccept && c.status === 'new' && (
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-md">
+                        <ShieldOff className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        รอเจ้าหน้าที่ห้องฉุกเฉินดำเนินการรับเคส
+                      </span>
+                    )}
+                    {!canArrive && c.status === 'accepted' && (
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-md">
+                        <ShieldOff className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                        รพ. รับทราบแล้ว — รอเจ้าหน้าที่ ER ยืนยันผู้ป่วยถึง
+                      </span>
+                    )}
+
+                    {/* Accept (ER/Admin only) */}
+                    {canAccept && c.status === 'new' && (
                       <button
                         type="button"
                         onClick={() => onUpdateStatus(c.id, 'accepted')}
@@ -598,7 +698,8 @@ export const HospitalMonitorPage: React.FC<HospitalMonitorPageProps> = ({
                       </button>
                     )}
 
-                    {c.status === 'accepted' && (
+                    {/* Patient Arrived (ER/Admin only) */}
+                    {canArrive && c.status === 'accepted' && (
                       <button
                         type="button"
                         onClick={() => onUpdateStatus(c.id, 'arrived')}
@@ -609,8 +710,8 @@ export const HospitalMonitorPage: React.FC<HospitalMonitorPageProps> = ({
                       </button>
                     )}
 
-                    {/* Revert status for accepted */}
-                    {c.status === 'accepted' && (
+                    {/* Revert status for accepted (ER/Admin only) */}
+                    {canRevert && c.status === 'accepted' && (
                       <button
                         type="button"
                         onClick={() => handleRevertStatus(c, 'new', 'ยกเลิกสถานะรับแจ้งเหตุ')}
@@ -622,32 +723,42 @@ export const HospitalMonitorPage: React.FC<HospitalMonitorPageProps> = ({
                       </button>
                     )}
 
+                    {/* Arrived status actions (ER/Admin only) */}
                     {c.status === 'arrived' && (
                       <>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedCaseForForm(c)}
-                          className={`font-bold text-xs px-3.5 py-2.5 sm:py-2 rounded-md shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                            recordedCaseIds.has(c.id)
-                              ? 'bg-teal-600 hover:bg-teal-700 text-white'
-                              : 'bg-amber-500 hover:bg-amber-600 text-white alert-spread-pulse'
-                          }`}
-                        >
-                          <FileText className="w-4 h-4 shrink-0" />
-                          <span>
-                            {recordedCaseIds.has(c.id) ? 'ดู/แก้ไขแบบบันทึก รพ. (F-PCT-001/ER)' : 'กรอกข้อมูล รพ. (F-PCT-001/ER)'}
+                        {canFillForm && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedCaseForForm(c)}
+                            className={`font-bold text-xs px-3.5 py-2.5 sm:py-2 rounded-md shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                              recordedCaseIds.has(c.id)
+                                ? 'bg-teal-600 hover:bg-teal-700 text-white'
+                                : 'bg-amber-500 hover:bg-amber-600 text-white alert-spread-pulse'
+                            }`}
+                          >
+                            <FileText className="w-4 h-4 shrink-0" />
+                            <span>
+                              {recordedCaseIds.has(c.id) ? 'ดู/แก้ไขแบบบันทึก รพ. (F-PCT-001/ER)' : 'กรอกข้อมูล รพ. (F-PCT-001/ER)'}
+                            </span>
+                          </button>
+                        )}
+                        {!canFillForm && (
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-md">
+                            <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                            ผู้ป่วยถึงโรงพยาบาลแล้ว — รอเจ้าหน้าที่ ER กรอกแบบบันทึก
                           </span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleRevertStatus(c, 'new', 'ยกเลิกสถานะผู้ป่วยถึงโรงพยาบาล')}
-                          className="bg-slate-100 hover:bg-rose-50 text-rose-700 hover:text-rose-800 border border-slate-200 hover:border-rose-300 font-semibold text-[11px] py-2.5 sm:py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-1 shrink-0"
-                          title="กรณีบันทึกผิดพลาด"
-                        >
-                          <RotateCcw className="w-3.5 h-3.5 shrink-0" />
-                          <span>ยกเลิกสถานะถึง รพ.</span>
-                        </button>
+                        )}
+                        {canRevert && (
+                          <button
+                            type="button"
+                            onClick={() => handleRevertStatus(c, 'new', 'ยกเลิกสถานะผู้ป่วยถึงโรงพยาบาล')}
+                            className="bg-slate-100 hover:bg-rose-50 text-rose-700 hover:text-rose-800 border border-slate-200 hover:border-rose-300 font-semibold text-[11px] py-2.5 sm:py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-1 shrink-0"
+                            title="กรณีบันทึกผิดพลาด"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+                            <span>ยกเลิกสถานะถึง รพ.</span>
+                          </button>
+                        )}
                       </>
                     )}
                   </div>
@@ -675,14 +786,16 @@ export const HospitalMonitorPage: React.FC<HospitalMonitorPageProps> = ({
                       </button>
                     )}
 
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteSingleCaseConfirm(c)}
-                      className="bg-slate-100 hover:bg-rose-50 text-rose-600 hover:text-rose-700 p-2 sm:p-1.5 rounded-md transition-colors border border-slate-200 hover:border-rose-300 flex items-center justify-center shrink-0"
-                      title="ลบเคสนี้ออกจากระบบ"
-                    >
-                      <Trash2 className="w-4 h-4 text-rose-600" />
-                    </button>
+                    {canDeleteCase && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteSingleCaseConfirm(c)}
+                        className="bg-slate-100 hover:bg-rose-50 text-rose-600 hover:text-rose-700 p-2 sm:p-1.5 rounded-md transition-colors border border-slate-200 hover:border-rose-300 flex items-center justify-center shrink-0"
+                        title="ลบเคสนี้ออกจากระบบ (ER / Admin เท่านั้น)"
+                      >
+                        <Trash2 className="w-4 h-4 text-rose-600" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
