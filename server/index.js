@@ -1132,15 +1132,15 @@ async function sendMophNotifyAlert(caseItem) {
                     type: 'box',
                     layout: 'baseline',
                     contents: [
-                      { type: 'text', text: '🚶 ประเภทการมา:', color: '#64748B', size: 'xs', flex: 4, weight: 'bold', adjustMode: 'shrink-to-fit' },
-                      { type: 'text', text: parsedArrivalType, color: parsedArrivalType === 'EMS' ? '#D97706' : '#0F172A', size: 'xs', flex: 7, weight: 'bold', wrap: true },
+                      { type: 'text', text: 'ประเภทการมา:', color: '#64748B', size: 'xs', flex: 4, weight: 'bold', adjustMode: 'shrink-to-fit' },
+                      { type: 'text', text: parsedArrivalType, color: parsedArrivalType === 'EMS' ? '#D97706' : '#0F172A', size: 'xs', weight: 'bold', flex: 7, wrap: true },
                     ],
                   },
                   {
                     type: 'box',
                     layout: 'baseline',
                     contents: [
-                      { type: 'text', text: '🏘️ ตำบล:', color: '#64748B', size: 'xs', flex: 4, weight: 'bold', adjustMode: 'shrink-to-fit' },
+                      { type: 'text', text: 'ตำบล:', color: '#64748B', size: 'xs', flex: 4, weight: 'bold', adjustMode: 'shrink-to-fit' },
                       { type: 'text', text: parsedTambon, color: '#0F172A', size: 'xs', flex: 7, wrap: true },
                     ],
                   },
@@ -1229,36 +1229,31 @@ async function sendMophNotifyAlert(caseItem) {
                 ],
               },
 
-              // Action Buttons Row: Google Maps + System Login
+              // Action Button 1: Google Maps Navigation
               {
-                type: 'box',
-                layout: 'horizontal',
-                spacing: 'sm',
-                contents: [
-                  {
-                    type: 'button',
-                    action: {
-                      type: 'uri',
-                      label: '🗺️ แผนที่นำทาง',
-                      uri: googleMapUrl,
-                    },
-                    style: 'primary',
-                    color: '#0284C7',
-                    height: 'sm',
-                    flex: 1,
-                  },
-                  {
-                    type: 'button',
-                    action: {
-                      type: 'uri',
-                      label: '🖥️ เข้าสู่ระบบ',
-                      uri: 'https://kamalasai-hosp.moph.go.th/tunjai/',
-                    },
-                    style: 'secondary',
-                    height: 'sm',
-                    flex: 1,
-                  },
-                ],
+                type: 'button',
+                action: {
+                  type: 'uri',
+                  label: '🗺️ เปิดแผนที่นำทาง Google Maps',
+                  uri: googleMapUrl,
+                },
+                style: 'primary',
+                color: '#0284C7',
+                height: 'sm',
+              },
+
+              // Action Button 2: Open System
+              {
+                type: 'button',
+                action: {
+                  type: 'uri',
+                  label: '🖥️ เข้าสู่ระบบ TunJai ER Monitor',
+                  uri: 'https://kamalasai-hosp.moph.go.th/tunjai/',
+                },
+                style: 'primary',
+                color: '#0d9488',
+                height: 'sm',
+                margin: 'sm',
               },
 
               {
