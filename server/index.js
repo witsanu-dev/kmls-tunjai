@@ -844,15 +844,7 @@ async function sendMophNotifyAlert(caseItem) {
                     layout: 'baseline',
                     contents: [
                       { type: 'text', text: '🧠 NIHSS Score:', color: '#64748B', size: 'xs', flex: 4, weight: 'bold', adjustMode: 'shrink-to-fit' },
-                      {
-                        type: 'box',
-                        layout: 'vertical',
-                        flex: 7,
-                        contents: [
-                          { type: 'text', text: nihssScoreText, color: '#6D28D9', size: 'xs', weight: 'bold', wrap: true },
-                          ...(nihssSeverityText ? [{ type: 'text', text: nihssSeverityText, color: '#6D28D9', size: 'xs', weight: 'bold', wrap: true, margin: 'xs' }] : []),
-                        ],
-                      },
+                      { type: 'text', text: nihssSeverityText ? `${nihssScoreText}\n${nihssSeverityText}` : nihssScoreText, color: '#6D28D9', size: 'xs', flex: 7, weight: 'bold', wrap: true },
                     ],
                   }] : []),
                   {
