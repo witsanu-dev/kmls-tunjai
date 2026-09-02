@@ -246,6 +246,7 @@ export const HospitalMonitorPage: React.FC<HospitalMonitorPageProps> = ({
 
     if (res.isConfirmed) {
       await onResetAll();
+      await onRefresh();
       MySwal.fire({
         icon: 'success',
         title: 'ล้างข้อมูลสำเร็จ',

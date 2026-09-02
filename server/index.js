@@ -1560,6 +1560,7 @@ app.delete('/api/cases/:id', async (req, res) => {
 app.delete('/api/cases', async (req, res) => {
   if (isDbConnected()) {
     try {
+      await getPool().query('DELETE FROM hospital_records');
       await getPool().query('DELETE FROM cases');
     } catch (e) {
       console.error('Error deleting cases in MySQL:', e.message);
