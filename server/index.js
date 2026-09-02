@@ -627,6 +627,8 @@ app.get('/api/auth/me', async (req, res) => {
     }
   }
   return res.status(401).json({ message: 'Session หมดอายุหรือไม่มีในระบบ' });
+});
+
 // POST Register (Public registration, pending Admin approval)
 app.post('/api/auth/register', async (req, res) => {
   const { username, password, full_name, role, agency_name, hospital_id, hospital_name, phone } = req.body;
