@@ -40,7 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'history' as ActiveTab,
-      label: 'ประวัติการแจ้งเหตุ',
+      label: 'ประวัติการรับแจ้งเหตุ',
       desc: 'History',
       icon: Table,
       badge: null,
@@ -56,7 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'users' as ActiveTab,
-      label: 'จัดการผู้ใช้งาน (User)',
+      label: 'จัดการผู้ใช้งาน',
       desc: 'Access Control',
       icon: Users,
       badge: null,
@@ -64,7 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'moph-notify' as ActiveTab,
-      label: 'ตั้งค่า MOPH Notify API',
+      label: 'ตั้งค่า MOPH Notify',
       desc: 'Notification Config',
       icon: BellRing,
       badge: null,
@@ -102,11 +102,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               setActiveTab(item.id);
               onCloseMobileMenu();
             }}
-            className={`w-full p-3 rounded-md text-left flex items-start justify-between transition-all cursor-pointer ${
-              isActive
-                ? 'bg-teal-600 text-white shadow-sm font-semibold'
-                : 'text-slate-700 hover:bg-slate-100 font-medium'
-            }`}
+            className={`w-full p-3 rounded-md text-left flex items-start justify-between transition-all cursor-pointer ${isActive
+              ? 'bg-teal-600 text-white shadow-sm font-semibold'
+              : 'text-slate-700 hover:bg-slate-100 font-medium'
+              }`}
           >
             <div className="flex items-start gap-3">
               <Icon className={`w-5 h-5 shrink-0 mt-0.5 ${isActive ? 'text-white' : 'text-slate-500'}`} />
@@ -120,9 +119,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {item.badge !== null && (
               <span
-                className={`text-xs px-2 py-0.5 rounded-full font-bold shrink-0 ml-2 ${
-                  isActive ? 'bg-white text-teal-700' : 'bg-rose-500 text-white siren-badge-pulse'
-                }`}
+                className={`text-xs px-2 py-0.5 rounded-full font-bold shrink-0 ml-2 ${isActive ? 'bg-white text-teal-700' : 'bg-rose-500 text-white siren-badge-pulse'
+                  }`}
               >
                 {item.badge}
               </span>
