@@ -137,6 +137,38 @@ export const UserManagementPage: React.FC<{ hospitals: Hospital[] }> = ({ hospit
     }
   };
 
+  const handleToggleActive = async (u: UserAccount) => {
+    if (u.username === 'admin') {
+      MySwal.fire({
+        icon: 'warning',
+        title: 'ไม่อนุญาตให้ปิดใช้งาน',
+        text: 'บัญชี ผู้ดูแลระบบหลัก (admin) ไม่สามารถปิดการใช้งานได้',
+        confirmButtonColor: '#0d9488',
+      });
+      return;
+    }
+
+    const newStatus = !u.is_active;
+    // Optimistic UI update
+    setUsers(prev => prev.map(item => item.id === u.id ? { ...item, is_active: newStatus } : item));
+
+    try {
+      await updateUserApi(u.id, { is_active: newStatus });
+      MySwal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: newStatus ? `อนุมัติเปิดใช้งานบัญชี ${u.username}` : `ปิดใช้งานบัญชี ${u.username}`,
+        showConfirmButton: false,
+        timer: 1800,
+      });
+    } catch (err: any) {
+      // Revert on error
+      setUsers(prev => prev.map(item => item.id === u.id ? { ...item, is_active: !newStatus } : item));
+      MySwal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาดในการเปลี่ยนสถานะ', text: err.message, confirmButtonColor: '#ef4444' });
+    }
+  };
+
   const filteredUsers = users.filter((u) => {
     const matchesSearch =
       u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -255,17 +287,28 @@ export const UserManagementPage: React.FC<{ hospitals: Hospital[] }> = ({ hospit
                     </td>
                     <td className="p-3 font-mono">{u.phone || '-'}</td>
                     <td className="p-3 text-center">
-                      {u.is_active ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                          <span>เปิดใช้งาน</span>
+                      <div className="flex flex-col items-center justify-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleActive(u)}
+                          disabled={u.username === 'admin'}
+                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                            u.is_active ? 'bg-emerald-600' : 'bg-slate-300'
+                          }`}
+                          title={u.is_active ? 'คลิกเพื่อปิดใช้งานบัญชี' : 'คลิกเพื่ออนุมัติเปิดใช้งานบัญชี'}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out flex items-center justify-center text-[10px] ${
+                              u.is_active ? 'translate-x-5 text-emerald-600' : 'translate-x-0 text-slate-400'
+                            }`}
+                          >
+                            {u.is_active ? '✓' : '✕'}
+                          </span>
+                        </button>
+                        <span className={`text-[10px] font-bold ${u.is_active ? 'text-emerald-700' : 'text-slate-400'}`}>
+                          {u.is_active ? 'เปิดใช้งาน' : 'รออนุมัติ / ปิด'}
                         </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-300">
-                          <XCircle className="w-3 h-3 text-slate-400" />
-                          <span>ปิดใช้งาน</span>
-                        </span>
-                      )}
+                      </div>
                     </td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">

@@ -124,12 +124,9 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
         icon: 'success',
         title: 'ลงทะเบียนสำเร็จเรียบร้อย',
         html: `
-          <div class="text-left text-xs space-y-2 p-2 bg-teal-50 rounded border border-teal-200">
-            <p class="font-bold text-teal-900 text-sm">📌 ขั้นตอนถัดไป:</p>
-            <p class="text-slate-700">คำขอลงทะเบียนบัญชี <b>${regUsername}</b> ถูกส่งไปยังระบบเรียบร้อยแล้ว</p>
-            <div class="p-2 bg-amber-50 border border-amber-200 rounded text-amber-800 font-semibold">
-              ⚠️ การเปิดใช้งานบัญชีจำเป็นต้องได้รับการ<b>ตรวจสอบและอนุมัติโดยผู้ดูแลระบบ</b> ก่อนเข้าใช้งาน
-            </div>
+          <div class="text-center text-xs space-y-1.5 p-2 bg-teal-50 rounded-md border border-teal-200 text-slate-800 font-medium">
+            <p>คำขอลงทะเบียนบัญชี <b class="text-teal-900">${regUsername}</b> ถูกส่งเข้าสู่ระบบแล้ว</p>
+            <p class="text-slate-600 text-[11px]">การเปิดใช้งานบัญชีต้องได้รับการตรวจสอบและอนุมัติโดยผู้ดูแลระบบ</p>
           </div>
         `,
         confirmButtonText: 'ตกลง',

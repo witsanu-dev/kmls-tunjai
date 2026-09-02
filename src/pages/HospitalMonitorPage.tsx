@@ -162,11 +162,11 @@ export const HospitalMonitorPage: React.FC<HospitalMonitorPageProps> = ({
     return true;
   });
 
-  // Sort active cases by urgency (shortest remaining time first)
+  // Sort cases by reported_at timestamp descending (latest case at the top)
   const sortedCases = [...displayedCases].sort((a, b) => {
-    const uA = getUrgency(a.onset_iso, nowMs);
-    const uB = getUrgency(b.onset_iso, nowMs);
-    return (uA.remainingMin ?? -999) - (uB.remainingMin ?? -999);
+    const tA = new Date(a.reported_at).getTime();
+    const tB = new Date(b.reported_at).getTime();
+    return tB - tA;
   });
 
   const handlePreviewPhoto = (photoUrl: string | null) => {
@@ -583,106 +583,107 @@ export const HospitalMonitorPage: React.FC<HospitalMonitorPageProps> = ({
                   );
                 })()}
 
-                {/* ── Row 3: Action Buttons (full width horizontal) ── */}
-                <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-2">
-                  {/* Primary action */}
-                  {c.status === 'new' && (
-                    <button
-                      type="button"
-                      onClick={() => onUpdateStatus(c.id, 'accepted')}
-                      className="flex-1 sm:flex-initial bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs px-4 py-2 rounded-md shadow-sm transition-colors flex items-center justify-center gap-1.5"
-                    >
-                      <UserCheck className="w-4 h-4" />
-                      <span>กดรับแจ้งเหตุ (Accept)</span>
-                    </button>
-                  )}
-
-                  {c.status === 'accepted' && (
-                    <button
-                      type="button"
-                      onClick={() => onUpdateStatus(c.id, 'arrived')}
-                      className="flex-1 sm:flex-initial bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-md shadow-sm transition-colors flex items-center justify-center gap-1.5"
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>ผู้ป่วยถึง รพ. แล้ว</span>
-                    </button>
-                  )}
-
-                  {/* Revert status */}
-                  {c.status === 'accepted' && (
-                    <button
-                      type="button"
-                      onClick={() => handleRevertStatus(c, 'new', 'ยกเลิกสถานะรับแจ้งเหตุ')}
-                      className="bg-slate-100 hover:bg-rose-50 text-rose-700 hover:text-rose-800 border border-slate-200 hover:border-rose-300 font-semibold text-[11px] py-2 px-3 rounded-md transition-colors flex items-center gap-1"
-                      title="กรณีรับเคสผิดพลาด"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      <span>ยกเลิกสถานะรับแจ้ง</span>
-                    </button>
-                  )}
-
-                  {c.status === 'arrived' && (
-                    <>
+                {/* ── Row 3: Action Buttons (Responsive Layout) ── */}
+                <div className="mt-3 pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                  {/* Left Group: Primary Actions & Revert Buttons */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {c.status === 'new' && (
                       <button
                         type="button"
-                        onClick={() => setSelectedCaseForForm(c)}
-                        className={`font-bold text-xs px-3.5 py-2 rounded-md shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                          recordedCaseIds.has(c.id)
-                            ? 'bg-teal-600 hover:bg-teal-700 text-white'
-                            : 'bg-amber-500 hover:bg-amber-600 text-white alert-spread-pulse'
-                        }`}
+                        onClick={() => onUpdateStatus(c.id, 'accepted')}
+                        className="flex-1 sm:flex-initial bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs px-4 py-2.5 sm:py-2 rounded-md shadow-xs transition-colors flex items-center justify-center gap-1.5 active:scale-[0.99]"
                       >
-                        <FileText className="w-4 h-4" />
-                        <span>
-                          {recordedCaseIds.has(c.id) ? 'ดู/แก้ไขแบบบันทึก รพ. (F-PCT-001/ER)' : 'กรอกข้อมูล รพ. (F-PCT-001/ER)'}
-                        </span>
+                        <UserCheck className="w-4 h-4 shrink-0" />
+                        <span>กดรับแจ้งเหตุ (Accept)</span>
                       </button>
+                    )}
 
+                    {c.status === 'accepted' && (
                       <button
                         type="button"
-                        onClick={() => handleRevertStatus(c, 'new', 'ยกเลิกสถานะผู้ป่วยถึงโรงพยาบาล')}
-                        className="bg-slate-100 hover:bg-rose-50 text-rose-700 hover:text-rose-800 border border-slate-200 hover:border-rose-300 font-semibold text-[11px] py-2 px-3 rounded-md transition-colors flex items-center gap-1"
-                        title="กรณีบันทึกผิดพลาด"
+                        onClick={() => onUpdateStatus(c.id, 'arrived')}
+                        className="flex-1 sm:flex-initial bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2.5 sm:py-2 rounded-md shadow-xs transition-colors flex items-center justify-center gap-1.5 active:scale-[0.99]"
                       >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        <span>ยกเลิกสถานะถึง รพ.</span>
+                        <CheckCircle2 className="w-4 h-4 shrink-0" />
+                        <span>ผู้ป่วยถึง รพ. แล้ว</span>
                       </button>
-                    </>
-                  )}
+                    )}
 
-                  {/* Spacer */}
-                  <div className="flex-1" />
+                    {/* Revert status for accepted */}
+                    {c.status === 'accepted' && (
+                      <button
+                        type="button"
+                        onClick={() => handleRevertStatus(c, 'new', 'ยกเลิกสถานะรับแจ้งเหตุ')}
+                        className="bg-slate-100 hover:bg-rose-50 text-rose-700 hover:text-rose-800 border border-slate-200 hover:border-rose-300 font-semibold text-[11px] py-2.5 sm:py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-1 shrink-0"
+                        title="กรณีรับเคสผิดพลาด"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+                        <span>ยกเลิกสถานะรับแจ้ง</span>
+                      </button>
+                    )}
 
-                  {/* Secondary tools: Maps, Photo, Delete */}
-                  <a
-                    href={mapsUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-md transition-colors border border-slate-200"
-                  >
-                    <Map className="w-3.5 h-3.5 text-teal-600" />
-                    <span>Google Maps</span>
-                  </a>
+                    {c.status === 'arrived' && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCaseForForm(c)}
+                          className={`font-bold text-xs px-3.5 py-2.5 sm:py-2 rounded-md shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                            recordedCaseIds.has(c.id)
+                              ? 'bg-teal-600 hover:bg-teal-700 text-white'
+                              : 'bg-amber-500 hover:bg-amber-600 text-white alert-spread-pulse'
+                          }`}
+                        >
+                          <FileText className="w-4 h-4 shrink-0" />
+                          <span>
+                            {recordedCaseIds.has(c.id) ? 'ดู/แก้ไขแบบบันทึก รพ. (F-PCT-001/ER)' : 'กรอกข้อมูล รพ. (F-PCT-001/ER)'}
+                          </span>
+                        </button>
 
-                  {c.id_photo_url && (
+                        <button
+                          type="button"
+                          onClick={() => handleRevertStatus(c, 'new', 'ยกเลิกสถานะผู้ป่วยถึงโรงพยาบาล')}
+                          className="bg-slate-100 hover:bg-rose-50 text-rose-700 hover:text-rose-800 border border-slate-200 hover:border-rose-300 font-semibold text-[11px] py-2.5 sm:py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-1 shrink-0"
+                          title="กรณีบันทึกผิดพลาด"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+                          <span>ยกเลิกสถานะถึง รพ.</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Right Group: Google Maps, Preview Photo, Delete Case */}
+                  <div className="flex items-center gap-2 justify-end pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                    <a
+                      href={mapsUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 sm:py-1.5 rounded-md transition-colors border border-slate-200"
+                    >
+                      <Map className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                      <span>Google Maps</span>
+                    </a>
+
+                    {c.id_photo_url && (
+                      <button
+                        type="button"
+                        onClick={() => handlePreviewPhoto(c.id_photo_url)}
+                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 p-2 sm:p-1.5 rounded-md transition-colors border border-slate-200 flex items-center justify-center shrink-0"
+                        title="ดูรูปถ่ายบัตร/อาการ"
+                      >
+                        <Eye className="w-4 h-4 text-teal-600" />
+                      </button>
+                    )}
+
                     <button
                       type="button"
-                      onClick={() => handlePreviewPhoto(c.id_photo_url)}
-                      className="bg-slate-100 hover:bg-slate-200 text-slate-700 p-2 rounded-md transition-colors border border-slate-200"
-                      title="ดูรูปถ่ายบัตร/อาการ"
+                      onClick={() => handleDeleteSingleCaseConfirm(c)}
+                      className="bg-slate-100 hover:bg-rose-50 text-rose-600 hover:text-rose-700 p-2 sm:p-1.5 rounded-md transition-colors border border-slate-200 hover:border-rose-300 flex items-center justify-center shrink-0"
+                      title="ลบเคสนี้ออกจากระบบ"
                     >
-                      <Eye className="w-4 h-4 text-teal-600" />
+                      <Trash2 className="w-4 h-4 text-rose-600" />
                     </button>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteSingleCaseConfirm(c)}
-                    className="bg-slate-100 hover:bg-rose-50 text-rose-600 hover:text-rose-700 p-2 rounded-md transition-colors border border-slate-200 hover:border-rose-300"
-                    title="ลบเคสนี้ออกจากระบบ"
-                  >
-                    <Trash2 className="w-4 h-4 text-rose-600" />
-                  </button>
+                  </div>
                 </div>
               </div>
             );

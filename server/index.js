@@ -678,7 +678,7 @@ app.get('/api/users', async (req, res) => {
   if (isDbConnected()) {
     try {
       const [rows] = await getPool().query(
-        'SELECT id, username, full_name, role, agency_name, hospital_id, hospital_name, phone, is_active, last_login_at, created_at FROM users ORDER BY id ASC'
+        'SELECT id, username, full_name, role, agency_name, hospital_id, hospital_name, phone, is_active, last_login_at, created_at FROM users ORDER BY id DESC'
       );
       return res.json(rows);
     } catch (e) {
