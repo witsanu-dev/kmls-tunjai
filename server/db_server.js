@@ -72,9 +72,10 @@ export async function initDbPool() {
       // Ignore if column already exists
     }
 
-    // Insert initial cases seeding if table has less than 5 cases
+    // Insert initial cases seeding ONLY if table is completely empty (first time startup)
     const [caseCountRows] = await connection.query('SELECT COUNT(*) as count FROM cases');
-    if (caseCountRows[0].count < 5) {
+    const [hasUsersRows] = await connection.query('SELECT COUNT(*) as count FROM users').catch(() => [{ count: 0 }]);
+    if (caseCountRows[0].count === 0 && hasUsersRows[0].count === 0) {
       await connection.query(`
         INSERT INTO \`cases\` (\`id\`, \`fr_name\`, \`patient_name\`, \`age\`, \`sex\`, \`location\`, \`latitude\`, \`longitude\`, \`hospital_id\`, \`hospital_name\`, \`face\`, \`arm\`, \`speech\`, \`onset_iso\`, \`nihss_total\`, \`nihss_severity\`, \`status\`, \`reported_at\`) VALUES
         ('SK-89A12', 'สมชาย ใจดี (กู้ชีพเทศบาลกมลาไสย)', 'นายสมศักดิ์ รุ่งเรือง', '64', 'ชาย', '14.9723, 102.0831 - ต.ในเมือง อ.เมือง', 14.97230000, 102.08310000, 1, 'โรงพยาบาลกมลาไสย', 1, 1, 0, NOW() - INTERVAL 25 MINUTE, 8, 'ปานกลาง (Moderate)', 'new', NOW() - INTERVAL 25 MINUTE),
