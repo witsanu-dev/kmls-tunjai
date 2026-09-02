@@ -170,10 +170,11 @@ export const UserManagementPage: React.FC<{ hospitals: Hospital[] }> = ({ hospit
   };
 
   const filteredUsers = users.filter((u) => {
+    const q = searchTerm.toLowerCase();
     const matchesSearch =
-      u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.agency_name.toLowerCase().includes(searchTerm.toLowerCase());
+      (u.username ?? '').toLowerCase().includes(q) ||
+      (u.full_name ?? '').toLowerCase().includes(q) ||
+      (u.agency_name ?? '').toLowerCase().includes(q);
     const matchesRole = selectedRoleFilter === 'all' || u.role === selectedRoleFilter;
     return matchesSearch && matchesRole;
   });
