@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MophNotifyConfig } from '../types/emergency';
 import { fetchMophNotifyConfig, saveMophNotifyConfig, testSendMophNotify } from '../services/api';
-import { BellRing, ShieldCheck, Key, Server, Send, Eye, EyeOff, Save, CheckCircle2, AlertCircle, RefreshCw, MessageSquare, ZoomIn, X } from 'lucide-react';
+import { BellRing, ShieldCheck, Key, Server, Send, Eye, EyeOff, Save, CheckCircle2, AlertCircle, RefreshCw, MessageSquare, ZoomIn, X, Globe, Rocket, Link2, Image as ImageIcon, Hospital as HospitalIcon, CheckCircle, XCircle } from 'lucide-react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 
@@ -176,11 +176,11 @@ export const MophNotifySettingsPage: React.FC = () => {
               : 'border-slate-200 bg-slate-50/60'
               }`}>
               <div className="flex items-start gap-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-lg ${config.moph_notify_enabled === 'true'
-                  ? 'bg-emerald-100'
-                  : 'bg-slate-200'
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${config.moph_notify_enabled === 'true'
+                  ? 'bg-emerald-100 text-emerald-600'
+                  : 'bg-slate-200 text-slate-400'
                   }`}>
-                  {config.moph_notify_enabled === 'true' ? '🟢' : '🔴'}
+                  {config.moph_notify_enabled === 'true' ? <CheckCircle className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-bold text-slate-800 leading-snug">
@@ -200,8 +200,8 @@ export const MophNotifySettingsPage: React.FC = () => {
                   : 'bg-white text-slate-600 border-slate-300 focus:border-slate-400'
                   }`}
               >
-                <option value="true">🟢 เปิดใช้งาน (Active)</option>
-                <option value="false">🔴 ปิดใช้งาน (Disabled)</option>
+                <option value="true">เปิดใช้งาน (Active)</option>
+                <option value="false">ปิดใช้งาน (Disabled)</option>
               </select>
             </div>
 
@@ -211,11 +211,11 @@ export const MophNotifySettingsPage: React.FC = () => {
               : 'border-amber-200 bg-amber-50/40'
               }`}>
               <div className="flex items-start gap-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-lg font-black text-xs ${config.moph_notify_env === 'PROD'
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${config.moph_notify_env === 'PROD'
                   ? 'bg-blue-100 text-blue-700'
                   : 'bg-amber-100 text-amber-700'
                   }`}>
-                  {config.moph_notify_env === 'PROD' ? '🌐' : '🚀'}
+                  {config.moph_notify_env === 'PROD' ? <Globe className="w-5 h-5" /> : <Rocket className="w-5 h-5" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-bold text-slate-800 leading-snug">
@@ -242,8 +242,8 @@ export const MophNotifySettingsPage: React.FC = () => {
                   : 'bg-amber-100 text-amber-800 border-amber-300 focus:border-amber-500'
                   }`}
               >
-                <option value="PROD">🌐 PROD (Production)</option>
-                <option value="UAT">🚀 UAT (Testing Server)</option>
+                <option value="PROD">PROD (Production)</option>
+                <option value="UAT">UAT (Testing Server)</option>
               </select>
             </div>
           </div>
@@ -263,7 +263,7 @@ export const MophNotifySettingsPage: React.FC = () => {
             </div>
             <div className="relative">
               <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                <span className="text-slate-400 text-xs">🔗</span>
+                <Link2 className="w-3.5 h-3.5 text-slate-400" />
               </div>
               <input
                 type="text"
@@ -374,7 +374,7 @@ export const MophNotifySettingsPage: React.FC = () => {
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                     />
                   ) : (
-                    <span className="text-xs text-slate-400 font-medium">🖼️ ตัวอย่างรูป Banner ส่วนหัว (แนะนำอัตราส่วน 3.5 : 1)</span>
+                    <span className="text-xs text-slate-400 font-medium flex items-center gap-1.5"><ImageIcon className="w-4 h-4 text-slate-400" /> ตัวอย่างรูป Banner ส่วนหัว (แนะนำอัตราส่วน 3.5 : 1)</span>
                   )}
                   
                   {/* Overlay Controls */}
@@ -427,7 +427,7 @@ export const MophNotifySettingsPage: React.FC = () => {
                     </div>
                   </>
                 ) : (
-                  <span className="text-2xl">🏥</span>
+                  <HospitalIcon className="w-6 h-6 text-slate-400" />
                 )}
               </div>
               <input
