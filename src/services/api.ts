@@ -17,52 +17,7 @@ function getLocalCases(): CaseRecord[] {
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (raw) return JSON.parse(raw);
   } catch (e) {}
-  return [
-    {
-      id: 'SK-89A12',
-      fr_name: 'สมชาย ใจดี (กู้ชีพเทศบาล)',
-      patient_name: 'นายสมศักดิ์ รุ่งเรือง',
-      age: '64',
-      sex: 'ชาย',
-      id_photo_url: null,
-      additional_photos: [],
-      location: '14.9723, 102.0831 - ต.ในเมือง อ.เมือง',
-      latitude: 14.9723,
-      longitude: 102.0831,
-      hospital_id: 1,
-      hospital_name: 'โรงพยาบาลมหาราช / ER Fast Track Center',
-      face: true,
-      arm: true,
-      speech: false,
-      onset_iso: new Date(Date.now() - 45 * 60000).toISOString(),
-      nihss_total: 8,
-      nihss_severity: 'ปานกลาง',
-      status: 'new',
-      reported_at: new Date(Date.now() - 45 * 60000).toISOString(),
-    },
-    {
-      id: 'SK-77B45',
-      fr_name: 'วิชัย ปลอดภัย (อสม. หมู่ 3)',
-      patient_name: 'นางมาลี สุขสันต์',
-      age: '71',
-      sex: 'หญิง',
-      id_photo_url: null,
-      additional_photos: [],
-      location: '14.9611, 102.0945 - บ้านโพธิ์ ต.ในเมือง',
-      latitude: 14.9611,
-      longitude: 102.0945,
-      hospital_id: 1,
-      hospital_name: 'โรงพยาบาลมหาราช / ER Fast Track Center',
-      face: true,
-      arm: true,
-      speech: true,
-      onset_iso: new Date(Date.now() - 90 * 60000).toISOString(),
-      nihss_total: 14,
-      nihss_severity: 'ปานกลาง',
-      status: 'accepted',
-      reported_at: new Date(Date.now() - 90 * 60000).toISOString(),
-    }
-  ];
+  return [];
 }
 
 function saveLocalCases(cases: CaseRecord[]) {

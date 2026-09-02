@@ -72,28 +72,7 @@ export async function initDbPool() {
       // Ignore if column already exists
     }
 
-    // Insert initial cases seeding ONLY if table is completely empty (first time startup)
-    const [caseCountRows] = await connection.query('SELECT COUNT(*) as count FROM cases');
-    const [hasUsersRows] = await connection.query('SELECT COUNT(*) as count FROM users').catch(() => [{ count: 0 }]);
-    if (caseCountRows[0].count === 0 && hasUsersRows[0].count === 0) {
-      await connection.query(`
-        INSERT INTO \`cases\` (\`id\`, \`fr_name\`, \`patient_name\`, \`age\`, \`sex\`, \`location\`, \`latitude\`, \`longitude\`, \`hospital_id\`, \`hospital_name\`, \`face\`, \`arm\`, \`speech\`, \`onset_iso\`, \`nihss_total\`, \`nihss_severity\`, \`status\`, \`reported_at\`) VALUES
-        ('SK-89A12', 'สมชาย ใจดี (กู้ชีพเทศบาลกมลาไสย)', 'นายสมศักดิ์ รุ่งเรือง', '64', 'ชาย', '14.9723, 102.0831 - ต.ในเมือง อ.เมือง', 14.97230000, 102.08310000, 1, 'โรงพยาบาลกมลาไสย', 1, 1, 0, NOW() - INTERVAL 25 MINUTE, 8, 'ปานกลาง (Moderate)', 'new', NOW() - INTERVAL 25 MINUTE),
-        ('SK-77B45', 'วิชัย ปลอดภัย (ศูนย์กู้ชีพ อบต.)', 'นางมาลี สุขสันต์', '71', 'หญิง', '14.9611, 102.0945 - บ้านโพธิ์ ต.ในเมือง', 14.96110000, 102.09450000, 1, 'โรงพยาบาลกมลาไสย', 1, 1, 1, NOW() - INTERVAL 65 MINUTE, 14, 'ปานกลาง-รุนแรง (Moderate to Severe)', 'accepted', NOW() - INTERVAL 65 MINUTE),
-        ('SK-91C03', 'สมเกียรติ สว่างภัย (กู้ชีพสว่างเมตตา)', 'นายบุญมี มั่นคง', '58', 'ชาย', '14.9815, 102.1022 - ต.จอหอ อ.เมือง', 14.98150000, 102.10220000, 2, 'โรงพยาบาลมหาราช / ER Fast Track Center', 1, 1, 1, NOW() - INTERVAL 110 MINUTE, 18, 'รุนแรง (Severe Stroke)', 'arrived', NOW() - INTERVAL 110 MINUTE),
-        ('SK-52D88', 'พยาบาลสมหญิง ER (รพ.สต. หนองบัว)', 'นางประนอม ศรีสุข', '68', 'หญิง', '14.9542, 102.0711 - ต.หนองบัวศาลา', 14.95420000, 102.07110000, 1, 'โรงพยาบาลกมลาไสย', 0, 1, 1, NOW() - INTERVAL 15 MINUTE, 6, 'น้อย (Minor Stroke)', 'new', NOW() - INTERVAL 15 MINUTE),
-        ('SK-34E19', 'ศูนย์กู้ภัยร่วมกตัญญู จุดเมือง', 'นายวินัย ชัยชนะ', '62', 'ชาย', '14.9780, 102.0890 - ต.สุรนารี อ.เมือง', 14.97800000, 102.08900000, 3, 'โรงพยาบาลเทพรัตน์นครราชสีมา', 1, 0, 1, NOW() - INTERVAL 140 MINUTE, 10, 'ปานกลาง (Moderate)', 'accepted', NOW() - INTERVAL 140 MINUTE),
-        ('SK-68F42', 'อสม. สมศรี (หมู่ 5 กมลาไสย)', 'นางทองย้อย อยู่ดี', '75', 'หญิง', '14.9650, 102.0780 - ต.โคกกรวด', 14.96500000, 102.07800000, 1, 'โรงพยาบาลกมลาไสย', 1, 1, 0, NOW() - INTERVAL 180 MINUTE, 12, 'ปานกลาง (Moderate)', 'arrived', NOW() - INTERVAL 180 MINUTE),
-        ('SK-15G77', 'สมชาย ใจดี (กู้ชีพเทศบาลกมลาไสย)', 'นายกิตติศักดิ์ เจริญพร', '53', 'ชาย', '14.9901, 102.1105 - ต.หัวทะเล', 14.99010000, 102.11050000, 2, 'โรงพยาบาลมหาราช / ER Fast Track Center', 0, 1, 0, NOW() - INTERVAL 40 MINUTE, 4, 'น้อย (Minor Stroke)', 'new', NOW() - INTERVAL 40 MINUTE),
-        ('SK-82H63', 'ศูนย์รับแจ้งเหตุ 1669 นครราชสีมา', 'นางสมบูรณ์ ดีเลิศ', '80', 'หญิง', '14.9600, 102.0850 - ต.ในเมือง', 14.96000000, 102.08500000, 1, 'โรงพยาบาลกมลาไสย', 1, 1, 1, NOW() - INTERVAL 210 MINUTE, 21, 'รุนแรงมาก (Severe Stroke)', 'arrived', NOW() - INTERVAL 210 MINUTE),
-        ('SK-29J54', 'วิชัย ปลอดภัย (ศูนย์กู้ชีพ อบต.)', 'นายประเสริฐ เลิศวณิช', '66', 'ชาย', '14.9755, 102.0999 - ต.หนองจะโบสถ์', 14.97550000, 102.09990000, 4, 'โรงพยาบาลค่ายสุรนารี', 1, 0, 1, NOW() - INTERVAL 85 MINUTE, 9, 'ปานกลาง (Moderate)', 'accepted', NOW() - INTERVAL 85 MINUTE),
-        ('SK-43K91', 'พยาบาลวิชาชีพ จุดคัดกรอง ER', 'นายถนอม จงเจริญ', '73', 'ชาย', '14.9670, 102.0810 - ต.ในเมือง', 14.96700000, 102.08100000, 1, 'โรงพยาบาลกมลาไสย', 1, 1, 1, NOW() - INTERVAL 300 MINUTE, 16, 'ปานกลาง-รุนแรง', 'arrived', NOW() - INTERVAL 300 MINUTE),
-        ('SK-07L36', 'กู้ภัยฮุก 31 จุดกมลาไสย', 'นางพยอม เจริญลาภ', '69', 'หญิง', '14.9830, 102.1050 - ต.บ้านเกาะ', 14.98300000, 102.10500000, 5, 'โรงพยาบาลกรุงเทพ-ราชสีมา', 0, 1, 1, NOW() - INTERVAL 50 MINUTE, 7, 'น้อย (Minor Stroke)', 'accepted', NOW() - INTERVAL 50 MINUTE),
-        ('SK-55M20', 'สมชาย ใจดี (กู้ชีพเทศบาลกมลาไสย)', 'นายชาญชัย มิ่งขวัญ', '61', 'ชาย', '14.9700, 102.0880 - ต.ในเมือง', 14.97000000, 102.08800000, 1, 'โรงพยาบาลกมลาไสย', 1, 1, 0, NOW() - INTERVAL 360 MINUTE, 11, 'ปานกลาง (Moderate)', 'arrived', NOW() - INTERVAL 360 MINUTE)
-        ON DUPLICATE KEY UPDATE \`updated_at\` = NOW();
-      `);
-      console.log('🌱 Seeded 12 default emergency cases into MySQL db_stalert');
-    }
+    // Production mode: Ensure cases table exists (no dummy sample cases auto-inserted)
 
     // Insert initial hospitals if table is empty
     const [hospRows] = await connection.query('SELECT COUNT(*) as count FROM hospitals');

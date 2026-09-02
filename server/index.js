@@ -723,17 +723,27 @@ app.put('/api/users/:id', async (req, res) => {
 
   if (isDbConnected()) {
     try {
-      if (password) {
-        await getPool().query(
-          `UPDATE users SET full_name=?, role=?, agency_name=?, hospital_id=?, hospital_name=?, phone=?, is_active=?, password_hash=? WHERE id=?`,
-          [full_name, role, agency_name, hospital_id || null, hospital_name, phone, is_active ? 1 : 0, password, id]
-        );
-      } else {
-        await getPool().query(
-          `UPDATE users SET full_name=?, role=?, agency_name=?, hospital_id=?, hospital_name=?, phone=?, is_active=? WHERE id=?`,
-          [full_name, role, agency_name, hospital_id || null, hospital_name, phone, is_active ? 1 : 0, id]
-        );
+      // First fetch current record to allow partial updates (e.g. toggling active status)
+      const [existing] = await getPool().query('SELECT * FROM users WHERE id = ?', [id]);
+      if (existing.length === 0) {
+        return res.status(404).json({ message: 'ไม่พบผู้ใช้งานนี้ในระบบ' });
       }
+      const cur = existing[0];
+
+      const newFullName = full_name !== undefined ? full_name : cur.full_name;
+      const newRole = role !== undefined ? role : cur.role;
+      const newAgency = agency_name !== undefined ? agency_name : cur.agency_name;
+      const newHospId = hospital_id !== undefined ? (hospital_id || null) : cur.hospital_id;
+      const newHospName = hospital_name !== undefined ? hospital_name : cur.hospital_name;
+      const newPhone = phone !== undefined ? phone : cur.phone;
+      const newIsActive = is_active !== undefined ? (is_active ? 1 : 0) : cur.is_active;
+      const newPassHash = password ? password : cur.password_hash;
+
+      await getPool().query(
+        `UPDATE users SET full_name=?, role=?, agency_name=?, hospital_id=?, hospital_name=?, phone=?, is_active=?, password_hash=? WHERE id=?`,
+        [newFullName, newRole, newAgency, newHospId, newHospName, newPhone, newIsActive, newPassHash, id]
+      );
+
       await writeAuditLog(req, { username: 'admin', role: 'admin' }, 'UPDATE_USER', `USER_ID:${id}`, `อัปเดตข้อมูลผู้ใช้ ID ${id}`);
       return res.json({ success: true, message: 'ปรับปรุงข้อมูลผู้ใช้งานเรียบร้อยแล้ว' });
     } catch (e) {
