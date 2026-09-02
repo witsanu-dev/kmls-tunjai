@@ -9,6 +9,12 @@ import withReactContent from 'sweetalert2-react-content';
 
 const MySwal = withReactContent(Swal);
 
+const ROLE_OPTIONS: { id: UserRole; name: string }[] = [
+  { id: 'fr_dispatch', name: 'เจ้าหน้าที่ภาคสนาม (FR Dispatch / EMS / กู้ชีพ)' },
+  { id: 'er_staff', name: 'พยาบาล/แพทย์ ห้องฉุกเฉิน (ER Staff)' },
+  { id: 'director', name: 'ผู้บริหาร/ผู้อำนวยการ (Director)' },
+];
+
 export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hospital[] }> = ({ onLoginSuccess, hospitals = [] }) => {
   const { login } = useAuth();
   const [username, setUsername] = useState('');
@@ -22,8 +28,13 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
   const [regUsername, setRegUsername] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regRole, setRegRole] = useState<UserRole>('fr_dispatch');
+  const [roleSearchTerm, setRoleSearchTerm] = useState('');
+  const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
   const [regAgencyName, setRegAgencyName] = useState('');
-  const [regHospitalId, setRegHospitalId] = useState<number | ''>(hospitals[0]?.id || 1);
+  const [regHospitalId, setRegHospitalId] = useState<number | 'other'>(hospitals[0]?.id || 1);
+  const [regCustomHospital, setRegCustomHospital] = useState('');
+  const [hospSearchTerm, setHospSearchTerm] = useState('');
+  const [isHospDropdownOpen, setIsHospDropdownOpen] = useState(false);
   const [regPhone, setRegPhone] = useState('');
   const [regSubmitting, setRegSubmitting] = useState(false);
 
@@ -73,18 +84,29 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
       return;
     }
 
-    const selectedHosp = hospitals.find(h => h.id === Number(regHospitalId)) || hospitals[0];
+    let hospId: number | null = null;
+    let hospName = '';
+
+    if (regHospitalId === 'other') {
+      hospName = regCustomHospital.trim() || 'อื่นๆ';
+    } else {
+      const selectedHosp = hospitals.find(h => h.id === Number(regHospitalId)) || hospitals[0];
+      if (selectedHosp) {
+        hospId = selectedHosp.id;
+        hospName = selectedHosp.name;
+      }
+    }
 
     setRegSubmitting(true);
     try {
-      const res = await registerApi({
+      await registerApi({
         full_name: regFullName,
         username: regUsername,
         password: regPassword,
         role: regRole,
         agency_name: regAgencyName,
-        hospital_id: selectedHosp ? selectedHosp.id : null,
-        hospital_name: selectedHosp ? selectedHosp.name : '',
+        hospital_id: hospId,
+        hospital_name: hospName,
         phone: regPhone,
       });
 
@@ -95,6 +117,8 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
       setRegPassword('');
       setRegAgencyName('');
       setRegPhone('');
+      setRegCustomHospital('');
+      setRegHospitalId(hospitals[0]?.id || 1);
 
       MySwal.fire({
         icon: 'success',
@@ -102,13 +126,13 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
         html: `
           <div class="text-left text-xs space-y-2 p-2 bg-teal-50 rounded border border-teal-200">
             <p class="font-bold text-teal-900 text-sm">📌 ขั้นตอนถัดไป:</p>
-            <p class="text-slate-700">คำขอลงทะเบียนบัญชี <b>${regUsername}</b> ถูกส่งไปยังระบบแล้ว</p>
+            <p class="text-slate-700">คำขอลงทะเบียนบัญชี <b>${regUsername}</b> ถูกส่งไปยังระบบเรียบร้อยแล้ว</p>
             <div class="p-2 bg-amber-50 border border-amber-200 rounded text-amber-800 font-semibold">
-              ⚠️ การเปิดใช้งานบัญชีจำเป็นต้องได้รับการตรวจสอบและ<b>อนุมัติสิทธิ์โดยผู้ดูแลระบบ (Admin)</b> ก่อน จึงจะสามารถล็อกอินเข้าใช้งานระบบได้
+              ⚠️ การเปิดใช้งานบัญชีจำเป็นต้องได้รับการ<b>ตรวจสอบและอนุมัติโดยผู้ดูแลระบบ</b> ก่อนเข้าใช้งาน
             </div>
           </div>
         `,
-        confirmButtonText: 'รับทราบ',
+        confirmButtonText: 'ตกลง',
         confirmButtonColor: '#0d9488',
       });
     } catch (err: any) {
@@ -122,6 +146,19 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
       setRegSubmitting(false);
     }
   };
+
+  const selectedHospitalDisplay = regHospitalId === 'other' 
+    ? 'อื่นๆ (ระบุชื่อโรงพยาบาล)' 
+    : (hospitals.find(h => h.id === Number(regHospitalId))?.name || 'เลือกโรงพยาบาล...');
+
+  const filteredHospitals = hospitals.filter(h => 
+    h.name.toLowerCase().includes(hospSearchTerm.toLowerCase()) || 
+    (h.code && h.code.toLowerCase().includes(hospSearchTerm.toLowerCase()))
+  );
+
+  const filteredRoles = ROLE_OPTIONS.filter(r => 
+    r.name.toLowerCase().includes(roleSearchTerm.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 relative">
@@ -215,7 +252,6 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="ป้อนชื่อผู้ใช้งาน..."
                   className="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-md pl-9 pr-3 py-2.5 focus:ring-2 focus:ring-teal-500 outline-none font-semibold transition-colors"
                 />
               </div>
@@ -231,7 +267,6 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
                   className="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-md pl-9 pr-3 py-2.5 focus:ring-2 focus:ring-teal-500 outline-none font-mono transition-colors"
                 />
               </div>
@@ -316,28 +351,22 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
       </div>
 
       {/* Responsive Floating Action Button (FAB) for User Registration */}
-      <div className="fixed bottom-5 right-5 z-40 group">
+      <div className="fixed bottom-5 right-5 z-40">
         <button
           type="button"
           onClick={() => setShowRegisterModal(true)}
-          className="relative flex items-center gap-2.5 bg-gradient-to-r from-teal-600 via-teal-700 to-emerald-700 hover:from-teal-700 hover:to-emerald-800 text-white font-bold text-xs sm:text-sm py-3 px-4 sm:px-5 rounded-full shadow-lg hover:shadow-xl active:scale-95 transition-all duration-300 cursor-pointer border border-teal-400/30"
-          title="ลงทะเบียนขอใช้งานระบบใหม่ (รอการอนุมัติโดย Admin)"
+          className="flex items-center gap-2 bg-gradient-to-r from-teal-600 via-teal-700 to-emerald-700 hover:from-teal-700 hover:to-emerald-800 text-white font-bold text-xs sm:text-sm py-2.5 px-4 sm:px-5 rounded-full shadow-lg hover:shadow-xl active:scale-95 transition-all duration-300 cursor-pointer border border-teal-400/30"
+          title="ลงทะเบียนขอใช้งานระบบ"
         >
-          <div className="relative">
-            <UserPlus className="w-5 h-5 animate-bounce" />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full animate-ping" />
-          </div>
-          <span className="tracking-wide">ลงทะเบียนขอใช้งานระบบ</span>
-          <span className="bg-teal-900/60 text-emerald-200 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-teal-400/40 uppercase hidden sm:inline-block">
-            Register
-          </span>
+          <UserPlus className="w-4 h-4 sm:w-5 sm:h-5 text-white stroke-[2.5]" />
+          <span className="tracking-wide">ลงทะเบียน</span>
         </button>
       </div>
 
       {/* Registration Modal Dialog */}
       {showRegisterModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white border border-slate-200 rounded-lg shadow-2xl w-full max-w-lg overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white border border-slate-200 rounded-md shadow-2xl w-full max-w-lg overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="bg-gradient-to-r from-teal-800 via-teal-700 to-emerald-800 text-white px-5 py-4 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -345,8 +374,8 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
                   <UserPlus className="w-5 h-5 text-emerald-300" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-white">ลงทะเบียนขอสิทธิ์ใช้งานระบบ</h3>
-                  <p className="text-[11px] text-teal-200">Stroke Alert FAST Track System Registration</p>
+                  <h3 className="font-bold text-base text-white">ลงทะเบียนใช้งานระบบ</h3>
+                  <p className="text-[11px] text-teal-200">TUNJAI Registration</p>
                 </div>
               </div>
               <button
@@ -358,15 +387,10 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
               </button>
             </div>
 
-            {/* Approval Notice Alert */}
-            <div className="bg-amber-50 border-b border-amber-200 px-5 py-3 flex items-start gap-2.5 text-xs text-amber-900">
-              <ShieldCheck className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold">เงื่อนไขการอนุมัติสิทธิ์ (Admin Approval Required):</span>
-                <p className="text-[11px] text-amber-800 mt-0.5">
-                  เมื่อกรอกข้อมูลเรียบร้อยแล้ว บัญชีของคุณจะถูกส่งเข้าสู่ระบบเพื่อรอการตรวจสอบและอนุมัติโดย<b>ผู้ดูแลระบบ (Admin)</b> ก่อนจะสามารถล็อกอินได้
-                </p>
-              </div>
+            {/* Approval Notice Alert - Attached under header */}
+            <div className="bg-amber-50 border-b border-amber-200 px-5 py-2.5 flex items-center gap-2 text-xs text-amber-900 font-semibold">
+              <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>เงื่อนไขการอนุมัติ : ตรวจสอบและอนุมัติโดยผู้ดูแลระบบ</span>
             </div>
 
             {/* Modal Form Body */}
@@ -383,7 +407,6 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
                       required
                       value={regFullName}
                       onChange={(e) => setRegFullName(e.target.value)}
-                      placeholder="เช่น นายวิชัย ปลอดภัย"
                       className="w-full bg-slate-50 border border-slate-300 rounded-md pl-8 pr-2.5 py-2 text-xs text-slate-900 focus:ring-1 focus:ring-teal-500 outline-none font-semibold"
                     />
                   </div>
@@ -400,7 +423,6 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
                       required
                       value={regPhone}
                       onChange={(e) => setRegPhone(e.target.value)}
-                      placeholder="เช่น 089 123 4567"
                       className="w-full bg-slate-50 border border-slate-300 rounded-md pl-8 pr-2.5 py-2 text-xs text-slate-900 focus:ring-1 focus:ring-teal-500 outline-none font-mono"
                     />
                   </div>
@@ -417,7 +439,6 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
                     required
                     value={regUsername}
                     onChange={(e) => setRegUsername(e.target.value)}
-                    placeholder="เช่น fr_somchai"
                     className="w-full bg-slate-50 border border-slate-300 rounded-md px-2.5 py-2 text-xs text-slate-900 focus:ring-1 focus:ring-teal-500 outline-none font-bold"
                   />
                 </div>
@@ -431,48 +452,159 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
                     required
                     value={regPassword}
                     onChange={(e) => setRegPassword(e.target.value)}
-                    placeholder="กำหนดรหัสผ่าน..."
                     className="w-full bg-slate-50 border border-slate-300 rounded-md px-2.5 py-2 text-xs text-slate-900 focus:ring-1 focus:ring-teal-500 outline-none font-mono"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Searchable Role Select */}
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">
                     ประเภทสิทธิ์ผู้ใช้งาน (Requested Role) <span className="text-rose-500">*</span>
                   </label>
-                  <select
-                    value={regRole}
-                    onChange={(e) => setRegRole(e.target.value as UserRole)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-md px-2.5 py-2 text-xs text-slate-900 focus:ring-1 focus:ring-teal-500 outline-none font-medium"
-                  >
-                    <option value="fr_dispatch">เจ้าหน้าที่ภาคสนาม (FR Dispatch / EMS / กู้ชีพ)</option>
-                    <option value="er_staff">พยาบาล/แพทย์ ห้องฉุกเฉิน (ER Staff)</option>
-                    <option value="director">ผู้บริหาร/ผู้อำนวยการ (Director)</option>
-                  </select>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsRoleDropdownOpen(!isRoleDropdownOpen);
+                        setIsHospDropdownOpen(false);
+                      }}
+                      className="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-md px-2.5 py-2 flex items-center justify-between hover:bg-slate-100 transition-colors outline-none focus:ring-1 focus:ring-teal-500 cursor-pointer"
+                    >
+                      <span className="font-semibold text-slate-800 truncate">
+                        {ROLE_OPTIONS.find(r => r.id === regRole)?.name || 'เลือกสิทธิ์ผู้ใช้งาน...'}
+                      </span>
+                      <span className="text-[10px] text-slate-400">▼</span>
+                    </button>
+
+                    {/* Searchable Role Dropdown Popover */}
+                    {isRoleDropdownOpen && (
+                      <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-md shadow-xl z-50 overflow-hidden">
+                        <div className="p-2 border-b border-slate-100 bg-slate-50">
+                          <input
+                            type="text"
+                            value={roleSearchTerm}
+                            onChange={(e) => setRoleSearchTerm(e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-md px-2.5 py-1 text-xs outline-none focus:ring-1 focus:ring-teal-500"
+                            autoFocus
+                          />
+                        </div>
+
+                        <div className="max-h-48 overflow-y-auto divide-y divide-slate-100">
+                          {filteredRoles.map((r) => (
+                            <button
+                              key={r.id}
+                              type="button"
+                              onClick={() => {
+                                setRegRole(r.id);
+                                setIsRoleDropdownOpen(false);
+                                setRoleSearchTerm('');
+                              }}
+                              className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-teal-50 transition-colors cursor-pointer ${
+                                regRole === r.id ? 'bg-teal-50 font-bold text-teal-800' : 'text-slate-700'
+                              }`}
+                            >
+                              <span>{r.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
+                {/* Searchable Hospital Select */}
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">
                     โรงพยาบาลสังกัด / ปลายทางหลัก
                   </label>
                   <div className="relative">
-                    <Building2 className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    <select
-                      value={regHospitalId}
-                      onChange={(e) => setRegHospitalId(Number(e.target.value))}
-                      className="w-full bg-slate-50 border border-slate-300 rounded-md pl-8 pr-2.5 py-2 text-xs text-slate-900 focus:ring-1 focus:ring-teal-500 outline-none font-medium"
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsHospDropdownOpen(!isHospDropdownOpen);
+                        setIsRoleDropdownOpen(false);
+                      }}
+                      className="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-md pl-8 pr-3 py-2 flex items-center justify-between hover:bg-slate-100 transition-colors outline-none focus:ring-1 focus:ring-teal-500 cursor-pointer"
                     >
-                      {hospitals.map((h) => (
-                        <option key={h.id} value={h.id}>
-                          {h.name}
-                        </option>
-                      ))}
-                    </select>
+                      <div className="flex items-center gap-1.5 truncate">
+                        <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                        <span className="font-semibold text-slate-800 truncate">
+                          {selectedHospitalDisplay}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-400">▼</span>
+                    </button>
+
+                    {/* Searchable Hospital Dropdown Popover */}
+                    {isHospDropdownOpen && (
+                      <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-md shadow-xl z-50 overflow-hidden">
+                        <div className="p-2 border-b border-slate-100 bg-slate-50">
+                          <input
+                            type="text"
+                            value={hospSearchTerm}
+                            onChange={(e) => setHospSearchTerm(e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-md px-2.5 py-1 text-xs outline-none focus:ring-1 focus:ring-teal-500"
+                            autoFocus
+                          />
+                        </div>
+
+                        <div className="max-h-48 overflow-y-auto divide-y divide-slate-100">
+                          {filteredHospitals.map((h) => (
+                            <button
+                              key={h.id}
+                              type="button"
+                              onClick={() => {
+                                setRegHospitalId(h.id);
+                                setIsHospDropdownOpen(false);
+                                setHospSearchTerm('');
+                              }}
+                              className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-teal-50 transition-colors cursor-pointer ${
+                                regHospitalId === h.id ? 'bg-teal-50 font-bold text-teal-800' : 'text-slate-700'
+                              }`}
+                            >
+                              <span>{h.name}</span>
+                              <span className="text-[10px] text-slate-400 font-mono">{h.code}</span>
+                            </button>
+                          ))}
+
+                          {/* "อื่นๆ (ระบุ)" Option */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRegHospitalId('other');
+                              setIsHospDropdownOpen(false);
+                              setHospSearchTerm('');
+                            }}
+                            className={`w-full text-left px-3 py-2 text-xs font-bold transition-colors cursor-pointer border-t border-slate-100 ${
+                              regHospitalId === 'other' ? 'bg-teal-50 text-teal-800' : 'text-slate-700 hover:bg-slate-50'
+                            }`}
+                          >
+                            อื่นๆ (ระบุชื่อโรงพยาบาล)
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
+
+              {/* Custom Hospital Input Field if "อื่นๆ" selected - Standard Simple Input */}
+              {regHospitalId === 'other' && (
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    ระบุชื่อโรงพยาบาลอื่นๆ <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={regCustomHospital}
+                    onChange={(e) => setRegCustomHospital(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-md px-2.5 py-2 text-xs text-slate-900 focus:ring-1 focus:ring-teal-500 outline-none font-medium"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
@@ -482,7 +614,6 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
                   type="text"
                   value={regAgencyName}
                   onChange={(e) => setRegAgencyName(e.target.value)}
-                  placeholder="เช่น ทีมกู้ชีพเทศบาลกมลาไสย หรือ ห้องฉุกเฉิน รพ.กมลาไสย"
                   className="w-full bg-slate-50 border border-slate-300 rounded-md px-2.5 py-2 text-xs text-slate-900 focus:ring-1 focus:ring-teal-500 outline-none"
                 />
               </div>
