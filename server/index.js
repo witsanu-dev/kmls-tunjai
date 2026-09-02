@@ -627,6 +627,46 @@ app.get('/api/auth/me', async (req, res) => {
     }
   }
   return res.status(401).json({ message: 'Session หมดอายุหรือไม่มีในระบบ' });
+// POST Register (Public registration, pending Admin approval)
+app.post('/api/auth/register', async (req, res) => {
+  const { username, password, full_name, role, agency_name, hospital_id, hospital_name, phone } = req.body;
+
+  if (!username || !password || !full_name || !role) {
+    return res.status(400).json({ message: 'กรุณากรอกข้อมูลสำคัญให้ครบถ้วน' });
+  }
+
+  // Sanitize username
+  const cleanUsername = username.trim();
+
+  if (isDbConnected()) {
+    try {
+      const [existing] = await getPool().query('SELECT id FROM users WHERE username = ?', [cleanUsername]);
+      if (existing.length > 0) {
+        return res.status(400).json({ message: 'ชื่อผู้ใช้งาน (Username) นี้ถูกใช้งานแล้วในระบบ' });
+      }
+
+      await getPool().query(
+        `INSERT INTO users (username, password_hash, full_name, role, agency_name, hospital_id, hospital_name, phone, is_active) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+        [cleanUsername, password, full_name.trim(), role, agency_name ? agency_name.trim() : '', hospital_id || null, hospital_name || '', phone ? phone.trim() : '']
+      );
+
+      await writeAuditLog(req, { username: cleanUsername, role }, 'REGISTER_REQUEST', `USER:${cleanUsername}`, `ลงทะเบียนผู้ใช้งานใหม่ (รออนุมัติโดย Admin): ${full_name} (${role})`);
+
+      return res.status(201).json({
+        success: true,
+        message: 'ลงทะเบียนสำเร็จ! บัญชีของคุณอยู่ระหว่างรอการตรวจสอบและอนุมัติโดยผู้ดูแลระบบ (Admin)'
+      });
+    } catch (e) {
+      console.error('Error during registration:', e.message);
+      return res.status(500).json({ message: 'เกิดข้อผิดพลาดในการลงทะเบียน โปรดลองอีกครั้ง' });
+    }
+  }
+
+  return res.status(201).json({
+    success: true,
+    message: 'ลงทะเบียนสำเร็จ! (โหมดทดลอง) บัญชีของคุณอยู่ระหว่างรอการอนุมัติโดย Admin'
+  });
 });
 
 // ── User Management Endpoints (Admin Only) ───────────────────────────────────

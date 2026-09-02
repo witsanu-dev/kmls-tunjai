@@ -144,6 +144,17 @@ export async function fetchUsersApi(): Promise<UserAccount[]> {
   return [];
 }
 
+export async function registerApi(userData: Partial<UserAccount> & { password: string }): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(userData),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || 'ไม่สามารถลงทะเบียนได้');
+  return json;
+}
+
 export async function createUserApi(userData: Partial<UserAccount> & { password: string }): Promise<void> {
   const token = getStoredAuthToken();
   const res = await fetch(`${API_BASE}/users`, {

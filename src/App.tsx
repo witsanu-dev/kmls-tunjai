@@ -109,7 +109,7 @@ function MainAppContent() {
 
   // Mandatory Authentication Guard for Production Standard
   if (!user) {
-    return <LoginPage />;
+    return <LoginPage hospitals={hospitals} />;
   }
 
   const activeCount = cases.filter(c => c.status !== 'arrived').length;
