@@ -100,13 +100,13 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
 
   // NIHSS Severity
   const severityData = useMemo(() => {
-    const minor    = cases.filter((c) => c.nihss_total != null && c.nihss_total <= 4  || (c.nihss_severity?.includes('น้อย'))).length;
-    const moderate = cases.filter((c) => c.nihss_total != null && c.nihss_total > 4 && c.nihss_total <= 15 || (c.nihss_severity?.includes('ปานกลาง'))).length;
-    const severe   = cases.filter((c) => c.nihss_total != null && c.nihss_total > 15  || (c.nihss_severity?.includes('รุนแรง'))).length;
+    const minor    = cases.filter((c) => (c.nihss_total != null && c.nihss_total <= 4)  || (c.nihss_severity?.includes('น้อย'))).length;
+    const moderate = cases.filter((c) => (c.nihss_total != null && c.nihss_total > 4 && c.nihss_total <= 15) || (c.nihss_severity?.includes('ปานกลาง'))).length;
+    const severe   = cases.filter((c) => (c.nihss_total != null && c.nihss_total > 15)  || (c.nihss_severity?.includes('รุนแรง'))).length;
     return [
-      { name: 'น้อย (1–4)', count: minor || 3 },
-      { name: 'ปานกลาง (5–15)', count: moderate || 6 },
-      { name: 'รุนแรง (>15)', count: severe || 3 },
+      { name: 'น้อย (1–4)', count: minor },
+      { name: 'ปานกลาง (5–15)', count: moderate },
+      { name: 'รุนแรง (>15)', count: severe },
     ];
   }, [cases]);
 
@@ -125,23 +125,11 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
       const h = new Date(c.reported_at).getHours();
       const idx = Math.floor(h / 2);
       if (idx >= 0 && idx < 12) {
-        if (c.status === 'new')      slots[idx].new      += 1;
+        if (c.status === 'new')          slots[idx].new      += 1;
         else if (c.status === 'accepted') slots[idx].accepted += 1;
         else if (c.status === 'arrived')  slots[idx].arrived  += 1;
       }
     });
-
-    // If all zeros, apply realistic medical pattern
-    const hasData = slots.some((s) => s.new + s.accepted + s.arrived > 0);
-    if (!hasData) {
-      const pattern = [0, 0, 1, 1, 2, 3, 4, 3, 2, 2, 1, 1]; // medically realistic
-      slots.forEach((s, i) => {
-        const v = pattern[i];
-        s.arrived  = Math.max(0, v - 1);
-        s.accepted = v > 1 ? 1 : 0;
-        s.new      = v > 2 ? 1 : 0;
-      });
-    }
 
     return slots.map((s) => ({ ...s, total: s.new + s.accepted + s.arrived }));
   }, [cases]);
