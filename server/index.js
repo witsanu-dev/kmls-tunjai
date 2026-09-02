@@ -1247,7 +1247,7 @@ async function sendMophNotifyAlert(caseItem) {
                 type: 'button',
                 action: {
                   type: 'uri',
-                  label: '🖥️ เข้าสู่ระบบ TunJai ER Monitor',
+                  label: 'เข้าสู่ระบบ TUNJAI',
                   uri: 'https://kamalasai-hosp.moph.go.th/tunjai/',
                 },
                 style: 'primary',
