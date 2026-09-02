@@ -676,15 +676,23 @@ async function sendMophNotifyAlert(caseItem) {
   const fastSummaryText = fastList.length > 0 ? fastList.join('\n') : '• พบอาการเสี่ยง Stroke';
   const fastShortText = fastList.length > 0 ? fastList.map(item => item.replace('• ', '')).join(', ') : 'พบอาการเสี่ยง Stroke';
 
-  // Parse arrivalType and tambon from embedded location string
-  // Format: "<location text> (ต.TAMBON อ.AMPHOE) [WALK IN/EMS]"
+  // Parse and clean location string to remove duplicated tambon and arrival_type
+  // Format: "<clean location text> (ต.TAMBON อ.AMPHOE) [WALK IN/EMS]"
   let parsedArrivalType = '-';
   let parsedTambon = '-';
+  let cleanLocation = caseItem.location || '-';
   if (caseItem.location) {
     const arrivalMatch = caseItem.location.match(/\[(WALK IN|EMS)\]/);
     if (arrivalMatch) parsedArrivalType = arrivalMatch[1];
     const tambonMatch = caseItem.location.match(/\(ต\.([^\s]+)\s+อ\.([^\)]+)\)/);
     if (tambonMatch) parsedTambon = `ต.${tambonMatch[1]} อ.${tambonMatch[2]}`;
+
+    // Clean location text for display in พิกัดรับเหตุ
+    cleanLocation = caseItem.location
+      .replace(/\(ต\.[^\s]+\s+อ\.[^\)]+\)/g, '')
+      .replace(/\[(WALK IN|EMS)\]/g, '')
+      .trim();
+    if (!cleanLocation) cleanLocation = '-';
   }
   
   // Line 1 & Line 2 strictly respect System Settings configured by Admin
@@ -706,16 +714,17 @@ async function sendMophNotifyAlert(caseItem) {
     }
   }
 
-  // Format NIHSS severity string cleanly without duplicate parentheses
-  let nihssDisplay = null;
+  // Format NIHSS severity string cleanly into separate line/text without bullet dots
+  let nihssScoreText = null;
+  let nihssSeverityText = null;
   let triageAdvice = 'เตรียมห้องฉุกเฉินและซักประวัติเพิ่ม';
   if (caseItem.nihss_total !== undefined && caseItem.nihss_total !== null) {
     const total = Number(caseItem.nihss_total);
     let severityClean = caseItem.nihss_severity || '';
-    // Clean outer parentheses if present in database string
-    severityClean = severityClean.replace(/^\((.*)\)$/, '$1');
+    severityClean = severityClean.replace(/^\((.*)\)$/, '$1').trim();
 
-    nihssDisplay = `${total} คะแนน ${severityClean ? `• ${severityClean}` : ''}`;
+    nihssScoreText = `${total} คะแนน`;
+    nihssSeverityText = severityClean || null;
 
     if (total >= 15) {
       triageAdvice = '🚨 เสี่ยงสูง: แจ้งแพทย์เฉพาะทาง / เตรียม CT Brain & Stroke Unit ด่วน';
@@ -723,31 +732,6 @@ async function sendMophNotifyAlert(caseItem) {
       triageAdvice = '⚠️ ปานกลาง: เตรียมพยาบาล FAST Track & จองคิว CT Scan ด่วน';
     } else {
       triageAdvice = 'ℹ️ เสี่ยงต่ำ: ประเมินอาการซ้ำทางกายภาพและติดตาม Vital Signs';
-    }
-  }
-
-  // Calculate Onset Golden Hour Status
-  let onsetDisplay = 'ไม่ระบุ';
-  let goldenHourTag = '⚡ stroke fast track';
-  if (caseItem.onset_iso) {
-    try {
-      const onsetTime = new Date(caseItem.onset_iso);
-      const diffMinutes = Math.floor((now.getTime() - onsetTime.getTime()) / (1000 * 60));
-      if (diffMinutes >= 0) {
-        const hours = Math.floor(diffMinutes / 60);
-        const mins = diffMinutes % 60;
-        const timeAgo = hours > 0 ? `${hours} ชม. ${mins} นาที` : `${mins} นาที`;
-        
-        if (diffMinutes <= 270) { // 4.5 hours = 270 mins (Golden Hour for iv rTPA)
-          goldenHourTag = '⏱️ อยู่ใน Golden Hour (iv rTPA Candidate)';
-          onsetDisplay = `${timeAgo} ที่แล้ว (${goldenHourTag})`;
-        } else {
-          goldenHourTag = '⚠️ เกิน 4.5 ชม. (ประเมิน Thrombectomy Candidate)';
-          onsetDisplay = `${timeAgo} ที่แล้ว (${goldenHourTag})`;
-        }
-      }
-    } catch (e) {
-      onsetDisplay = caseItem.onset_iso;
     }
   }
 
@@ -830,12 +814,20 @@ async function sendMophNotifyAlert(caseItem) {
                       { type: 'text', text: fastSummaryText, color: '#D97706', size: 'xs', flex: 7, weight: 'bold', wrap: true },
                     ],
                   },
-                  ...(nihssDisplay ? [{
+                  ...(nihssScoreText ? [{
                     type: 'box',
                     layout: 'baseline',
                     contents: [
                       { type: 'text', text: '🧠 NIHSS Score:', color: '#64748B', size: 'xs', flex: 4, weight: 'bold', adjustMode: 'shrink-to-fit' },
-                      { type: 'text', text: nihssDisplay, color: '#6D28D9', size: 'xs', flex: 7, weight: 'bold', wrap: true },
+                      {
+                        type: 'box',
+                        layout: 'vertical',
+                        flex: 7,
+                        contents: [
+                          { type: 'text', text: nihssScoreText, color: '#6D28D9', size: 'xs', weight: 'bold', wrap: true },
+                          ...(nihssSeverityText ? [{ type: 'text', text: nihssSeverityText, color: '#6D28D9', size: 'xs', weight: 'bold', wrap: true, margin: 'xs' }] : []),
+                        ],
+                      },
                     ],
                   }] : []),
                   {
@@ -859,7 +851,7 @@ async function sendMophNotifyAlert(caseItem) {
                     layout: 'baseline',
                     contents: [
                       { type: 'text', text: '📍 พิกัดรับเหตุ:', color: '#64748B', size: 'xs', flex: 4, weight: 'bold', adjustMode: 'shrink-to-fit' },
-                      { type: 'text', text: caseItem.location || '-', color: '#0F172A', size: 'xs', flex: 7, wrap: true },
+                      { type: 'text', text: cleanLocation, color: '#0F172A', size: 'xs', flex: 7, wrap: true },
                     ],
                   },
                   {
@@ -981,7 +973,7 @@ async function sendMophNotifyAlert(caseItem) {
                 type: 'button',
                 action: {
                   type: 'uri',
-                  label: 'เข้าสู่ระบบ TUNJAI',
+                  label: '🌐 เข้าสู่ระบบ TUNJAI',
                   uri: 'https://kamalasai-hosp.moph.go.th/tunjai/',
                 },
                 style: 'primary',
