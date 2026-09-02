@@ -941,6 +941,17 @@ async function sendMophNotifyAlert(caseItem) {
 
   const fastSummaryText = fastList.length > 0 ? fastList.join('\n') : '• พบอาการเสี่ยง Stroke';
   const fastShortText = fastList.length > 0 ? fastList.map(item => item.replace('• ', '')).join(', ') : 'พบอาการเสี่ยง Stroke';
+
+  // Parse arrivalType and tambon from embedded location string
+  // Format: "<location text> (ต.TAMBON อ.AMPHOE) [WALK IN/EMS]"
+  let parsedArrivalType = '-';
+  let parsedTambon = '-';
+  if (caseItem.location) {
+    const arrivalMatch = caseItem.location.match(/\[(WALK IN|EMS)\]/);
+    if (arrivalMatch) parsedArrivalType = arrivalMatch[1];
+    const tambonMatch = caseItem.location.match(/\(ต\.([^\s]+)\s+อ\.([^\)]+)\)/);
+    if (tambonMatch) parsedTambon = `ต.${tambonMatch[1]} อ.${tambonMatch[2]}`;
+  }
   
   // Line 1 & Line 2 strictly respect System Settings configured by Admin
   const hospitalLine1 = settingsMap.moph_notify_hospital_line1 || 'โรงพยาบาล';
@@ -1117,6 +1128,22 @@ async function sendMophNotifyAlert(caseItem) {
                       { type: 'text', text: caseItem.location || '-', color: '#0F172A', size: 'xs', flex: 7, wrap: true },
                     ],
                   },
+                  {
+                    type: 'box',
+                    layout: 'baseline',
+                    contents: [
+                      { type: 'text', text: '🚶 ประเภทการมา:', color: '#64748B', size: 'xs', flex: 4, weight: 'bold', adjustMode: 'shrink-to-fit' },
+                      { type: 'text', text: parsedArrivalType, color: parsedArrivalType === 'EMS' ? '#D97706' : '#0F172A', size: 'xs', flex: 7, weight: 'bold', wrap: true },
+                    ],
+                  },
+                  {
+                    type: 'box',
+                    layout: 'baseline',
+                    contents: [
+                      { type: 'text', text: '🏘️ ตำบล:', color: '#64748B', size: 'xs', flex: 4, weight: 'bold', adjustMode: 'shrink-to-fit' },
+                      { type: 'text', text: parsedTambon, color: '#0F172A', size: 'xs', flex: 7, wrap: true },
+                    ],
+                  },
                 ],
               },
 
@@ -1202,17 +1229,36 @@ async function sendMophNotifyAlert(caseItem) {
                 ],
               },
 
-              // Action Button: Google Maps Navigation (rounded-md style)
+              // Action Buttons Row: Google Maps + System Login
               {
-                type: 'button',
-                action: {
-                  type: 'uri',
-                  label: '🗺️ เปิดแผนที่นำทาง (Google Maps)',
-                  uri: googleMapUrl,
-                },
-                style: 'primary',
-                color: '#0284C7',
-                height: 'sm',
+                type: 'box',
+                layout: 'horizontal',
+                spacing: 'sm',
+                contents: [
+                  {
+                    type: 'button',
+                    action: {
+                      type: 'uri',
+                      label: '🗺️ แผนที่นำทาง',
+                      uri: googleMapUrl,
+                    },
+                    style: 'primary',
+                    color: '#0284C7',
+                    height: 'sm',
+                    flex: 1,
+                  },
+                  {
+                    type: 'button',
+                    action: {
+                      type: 'uri',
+                      label: '🖥️ เข้าสู่ระบบ',
+                      uri: 'https://kamalasai-hosp.moph.go.th/tunjai/',
+                    },
+                    style: 'secondary',
+                    height: 'sm',
+                    flex: 1,
+                  },
+                ],
               },
 
               {
