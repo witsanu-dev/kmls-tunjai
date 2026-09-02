@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserAccount, UserRole, Hospital } from '../types/emergency';
 import { fetchUsersApi, createUserApi, updateUserApi, deleteUserApi } from '../services/api';
-import { Users, UserPlus, ShieldAlert, Key, Edit, Trash2, CheckCircle2, XCircle, Search, Building2 } from 'lucide-react';
+import { Users, UserPlus, ShieldAlert, Key, Edit, Trash2, CheckCircle2, XCircle, Search, Building2, Check, X } from 'lucide-react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 
@@ -299,11 +299,14 @@ export const UserManagementPage: React.FC<{ hospitals: Hospital[] }> = ({ hospit
                           title={u.is_active ? 'คลิกเพื่อปิดใช้งานบัญชี' : 'คลิกเพื่ออนุมัติเปิดใช้งานบัญชี'}
                         >
                           <span
-                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out flex items-center justify-center text-[10px] ${
-                              u.is_active ? 'translate-x-5 text-emerald-600' : 'translate-x-0 text-slate-400'
+                            className={`pointer-events-none inline-flex h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out items-center justify-center ${
+                              u.is_active ? 'translate-x-5' : 'translate-x-0'
                             }`}
                           >
-                            {u.is_active ? '✓' : '✕'}
+                            {u.is_active
+                              ? <Check className="w-3 h-3 text-emerald-600" strokeWidth={3} />
+                              : <X className="w-3 h-3 text-slate-400" strokeWidth={3} />
+                            }
                           </span>
                         </button>
                         <span className={`text-[10px] font-bold ${u.is_active ? 'text-emerald-700' : 'text-slate-400'}`}>
