@@ -35,20 +35,20 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
       return;
     }
 
-    // Detect iOS (no beforeinstallprompt support — show manual guide)
+    // Always show install button on web browser
+    setShowInstallBtn(true);
+
+    // Detect iOS
     const ua = navigator.userAgent;
     const iosDevice = /iphone|ipad|ipod/i.test(ua) && !(window as any).MSStream;
     if (iosDevice) {
       setIsIos(true);
-      setShowInstallBtn(true);
-      return;
     }
 
-    // Android / Chrome / Edge — capture beforeinstallprompt
+    // Android / Chrome / Edge — capture beforeinstallprompt if available
     const handler = (e: Event) => {
       e.preventDefault();
       deferredPromptRef.current = e;
-      setShowInstallBtn(true);
     };
     window.addEventListener('beforeinstallprompt', handler);
 
@@ -64,16 +64,16 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
   const handleInstallPwa = async () => {
     if (isIos) {
       MySwal.fire({
-        title: '📲 เพิ่มแอปไปหน้าจอ (iOS)',
+        title: '📲 เพิ่ม TUNJAI ไปหน้าจอ (iOS)',
         html: `
           <div class="text-left text-sm space-y-3 text-slate-700">
-            <p>เปิดใน <strong>Safari</strong> แล้วทำตามขั้นตอน:</p>
-            <ol class="space-y-2 list-decimal list-inside">
-              <li>กดไอคอน <strong>แชร์</strong> (📤) ที่แถบล่าง</li>
-              <li>เลื่อนลงหา <strong>"เพิ่มที่หน้าจอโฮม"</strong></li>
-              <li>กด <strong>เพิ่ม</strong> เพื่อยืนยัน</li>
+            <p>เปิดใน <strong>Safari</strong> แล้วทำตามขั้นตอนง่ายๆ ดังนี้:</p>
+            <ol class="space-y-2 list-decimal list-inside bg-slate-50 p-3 rounded-md border border-slate-200">
+              <li>กดไอคอน <strong>แชร์</strong> (📤) ที่แถบล่างของ Safari</li>
+              <li>เลื่อนลงหาเมนู <strong>"เพิ่มที่หน้าจอโฮม" (Add to Home Screen)</strong></li>
+              <li>กด <strong>"เพิ่ม" (Add)</strong> มุมขวาบน</li>
             </ol>
-            <p class="text-xs text-slate-500 mt-2">หมายเหตุ: ต้องใช้เบราว์เซอร์ Safari เท่านั้นสำหรับ iPhone/iPad</p>
+            <p class="text-xs text-teal-700 font-semibold mt-2">✨ คุณจะได้ทางลัดแอป TUNJAI บนหน้าจอมือถือทันที!</p>
           </div>
         `,
         icon: 'info',
@@ -90,6 +90,25 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
         setShowInstallBtn(false);
       }
       deferredPromptRef.current = null;
+    } else {
+      // Fallback for Android/Chrome when direct prompt is not supported (e.g. non-HTTPS or custom webview)
+      MySwal.fire({
+        title: '📱 ติดตั้งแอป TUNJAI บนมือถือ / คอมพิวเตอร์',
+        html: `
+          <div class="text-left text-sm space-y-3 text-slate-700">
+            <p>ทำตามขั้นตอนง่ายๆ เพื่อสร้างไอคอนทางลัดบนหน้าจอ:</p>
+            <ol class="space-y-2 list-decimal list-inside bg-slate-50 p-3 rounded-md border border-slate-200">
+              <li>กดไอคอน <strong>เมนู 3 จุด (⋮)</strong> ที่มุมขวาบนของเบราว์เซอร์</li>
+              <li>เลือก <strong>"ติดตั้งแอป" (Install app)</strong> หรือ <strong>"เพิ่มลงในหน้าจอหลัก" (Add to Home screen)</strong></li>
+              <li>กด <strong>"เพิ่ม / ติดตั้ง"</strong> เพื่อยืนยัน</li>
+            </ol>
+            <p class="text-xs text-teal-700 font-semibold mt-2">✨ ไอคอน TUNJAI จะถูกสร้างบนหน้าจอมือถือทันที เข้าใช้งานได้สะดวกรวดเร็ว!</p>
+          </div>
+        `,
+        icon: 'info',
+        confirmButtonText: 'ตกลง',
+        confirmButtonColor: '#0d9488',
+      });
     }
   };
 
