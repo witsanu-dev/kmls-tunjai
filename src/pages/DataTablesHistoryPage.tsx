@@ -9,6 +9,8 @@ import withReactContent from 'sweetalert2-react-content';
 
 const MySwal = withReactContent(Swal);
 
+import { getFullImageUrl } from '../services/api';
+
 interface DataTablesHistoryPageProps {
   cases: CaseRecord[];
 }
@@ -616,14 +618,14 @@ export const DataTablesHistoryPage: React.FC<DataTablesHistoryPageProps> = ({ ca
                         onClick={() => {
                           MySwal.fire({
                             title: 'รูปถ่ายผู้ป่วย / บัตรประชาชน',
-                            imageUrl: selectedCase.id_photo_url!,
+                            imageUrl: getFullImageUrl(selectedCase.id_photo_url),
                             confirmButtonText: 'ปิด',
                             confirmButtonColor: '#0d9488',
                           });
                         }}
                         className="flex items-center gap-1.5 bg-white border border-slate-200 hover:border-teal-500 p-1.5 rounded-md transition-colors"
                       >
-                        <img src={selectedCase.id_photo_url} alt="ID/Patient" className="w-10 h-10 object-cover rounded" />
+                        <img src={getFullImageUrl(selectedCase.id_photo_url)} alt="ID/Patient" className="w-10 h-10 object-cover rounded" />
                         <span className="text-[11px] font-bold text-slate-700">รูปบัตร/ผู้ป่วย</span>
                       </button>
                     )}
@@ -634,14 +636,14 @@ export const DataTablesHistoryPage: React.FC<DataTablesHistoryPageProps> = ({ ca
                         onClick={() => {
                           MySwal.fire({
                             title: `รูปภาพเพิ่มเติม ${idx + 1}`,
-                            imageUrl: url,
+                            imageUrl: getFullImageUrl(url),
                             confirmButtonText: 'ปิด',
                             confirmButtonColor: '#0d9488',
                           });
                         }}
                         className="flex items-center gap-1.5 bg-white border border-slate-200 hover:border-teal-500 p-1.5 rounded-md transition-colors"
                       >
-                        <img src={url} alt={`Extra ${idx + 1}`} className="w-10 h-10 object-cover rounded" />
+                        <img src={getFullImageUrl(url)} alt={`Extra ${idx + 1}`} className="w-10 h-10 object-cover rounded" />
                         <span className="text-[11px] font-bold text-slate-700">ภาพที่ {idx + 1}</span>
                       </button>
                     ))}

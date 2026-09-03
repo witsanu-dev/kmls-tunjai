@@ -12,6 +12,22 @@ const DEFAULT_HOSPITALS: Hospital[] = [
   { id: 4, code: 'HSP004', name: 'โรงพยาบาลกรุงเทพ-ราชสีมา', level: 'รพ.เอกชน', phone: '044-015999' },
 ];
 
+/**
+ * Format photo URL to load properly in both root and subpath production deployments (e.g. /tunjai/)
+ */
+export function getFullImageUrl(url: string | null | undefined): string {
+  if (!url) return '';
+  if (url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  // Ensure relative url starts with dot or clean pathname prefix
+  const cleanPath = url.startsWith('/') ? url.slice(1) : url;
+  const baseUrl = window.location.pathname.endsWith('/') 
+    ? window.location.pathname 
+    : window.location.pathname.slice(0, window.location.pathname.lastIndexOf('/') + 1);
+  return `${baseUrl}${cleanPath}`;
+}
+
 function getLocalCases(): CaseRecord[] {
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY);

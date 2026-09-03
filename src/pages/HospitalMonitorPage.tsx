@@ -61,6 +61,8 @@ interface HospitalMonitorPageProps {
   onResetAll: () => Promise<void>;
 }
 
+import { getFullImageUrl } from '../services/api';
+
 /** Collapsible thumbnail strip for additional case photos */
 const AdditionalPhotosStrip: React.FC<{ photos: string[] }> = ({ photos }) => {
   const [expanded, setExpanded] = useState(false);
@@ -68,7 +70,7 @@ const AdditionalPhotosStrip: React.FC<{ photos: string[] }> = ({ photos }) => {
   const openPreview = (url: string) => {
     MySwal.fire({
       title: 'รูปภาพประกอบ',
-      imageUrl: url,
+      imageUrl: getFullImageUrl(url),
       imageAlt: 'รูปภาพเพิ่มเติม',
       confirmButtonText: 'ปิด',
       confirmButtonColor: '#0d9488',
@@ -100,7 +102,7 @@ const AdditionalPhotosStrip: React.FC<{ photos: string[] }> = ({ photos }) => {
               onClick={() => openPreview(url)}
             >
               <img
-                src={url}
+                src={getFullImageUrl(url)}
                 alt={`ภาพที่ ${idx + 1}`}
                 className="w-full h-full object-cover transition-transform group-hover:scale-105"
               />
@@ -188,7 +190,7 @@ export const HospitalMonitorPage: React.FC<HospitalMonitorPageProps> = ({
     if (!photoUrl) return;
     MySwal.fire({
       title: 'รูปถ่ายผู้ป่วย / บัตรประชาชน',
-      imageUrl: photoUrl,
+      imageUrl: getFullImageUrl(photoUrl),
       imageAlt: 'Patient ID Card',
       confirmButtonText: 'ปิดหน้าต่าง',
       confirmButtonColor: '#0d9488',
