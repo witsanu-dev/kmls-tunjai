@@ -3,7 +3,7 @@ import { Hospital as HospitalIcon, Clock, CheckCircle2, Navigation, Eye, Trash2,
 import { CaseRecord, CaseStatus, Hospital } from '../types/emergency';
 import { UrgencyRing, getUrgency, fmtRemaining } from '../components/UrgencyTimer';
 import { HospitalRecordForm } from '../components/HospitalRecordForm';
-import { fetchHospitalRecord } from '../services/api';
+import { fetchHospitalRecord, deleteCasePhoto } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
@@ -64,7 +64,7 @@ interface HospitalMonitorPageProps {
 import { getFullImageUrl } from '../services/api';
 
 /** Collapsible thumbnail strip for additional case photos */
-const AdditionalPhotosStrip: React.FC<{ photos: string[] }> = ({ photos }) => {
+const AdditionalPhotosStrip: React.FC<{ caseId: string, photos: string[], canDelete: boolean, onDeletePhoto: (caseId: string, url: string, type: 'id'|'extra') => void }> = ({ caseId, photos, canDelete, onDeletePhoto }) => {
   const [expanded, setExpanded] = useState(false);
 
   const openPreview = (url: string) => {
@@ -112,6 +112,15 @@ const AdditionalPhotosStrip: React.FC<{ photos: string[] }> = ({ photos }) => {
               <span className="absolute bottom-0.5 left-1 text-[9px] font-bold text-white drop-shadow select-none">
                 {idx + 1}
               </span>
+              {canDelete && (
+                <div
+                  className="absolute top-0 right-0 p-1 bg-rose-600/90 hover:bg-rose-700 text-white rounded-bl-md opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                  onClick={(e) => { e.stopPropagation(); onDeletePhoto(caseId, url, 'extra'); }}
+                  title="ลบรูปภาพนี้"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -206,6 +215,37 @@ export const HospitalMonitorPage: React.FC<HospitalMonitorPageProps> = ({
         image: 'rounded-md max-h-96 object-contain',
       }
     });
+  };
+
+  const handleDeletePhoto = async (caseId: string, photoUrl: string, type: 'id' | 'extra') => {
+    const confirmRes = await MySwal.fire({
+      title: 'ลบรูปภาพนี้?',
+      text: 'คุณยืนยันที่จะลบรูปภาพนี้ออกจากระบบหรือไม่? (ไม่สามารถกู้คืนได้)',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'ใช่, ลบรูปภาพ',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+    });
+
+    if (confirmRes.isConfirmed) {
+      const success = await deleteCasePhoto(caseId, photoUrl);
+      if (success) {
+        MySwal.fire({
+          icon: 'success',
+          title: 'ลบรูปภาพเรียบร้อยแล้ว',
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      } else {
+        MySwal.fire({
+          icon: 'error',
+          title: 'ลบรูปภาพไม่สำเร็จ',
+          text: 'เกิดข้อผิดพลาดในการลบรูปภาพ กรุณาลองใหม่อีกครั้ง',
+        });
+      }
+    }
   };
 
   const handleDeleteSingleCaseConfirm = async (c: CaseRecord) => {
@@ -476,6 +516,16 @@ export const HospitalMonitorPage: React.FC<HospitalMonitorPageProps> = ({
               ? `https://maps.google.com/?q=${c.latitude},${c.longitude}`
               : `https://maps.google.com/?q=${encodeURIComponent(c.location)}`;
 
+            const canDeletePhoto = role === 'admin' || role === 'er_staff' || isCaseOwner(c);
+
+            const arrivalMatch = c.location?.match(/\[(WALK IN|EMS)\]/);
+            const arrivalType = arrivalMatch ? arrivalMatch[1] : null;
+
+            const tambonMatch = c.location?.match(/\(ต\.([^\s]+)\s+อ\.([^\)]+)\)/);
+            const tambon = tambonMatch ? `ต.${tambonMatch[1]} อ.${tambonMatch[2]}` : null;
+
+            const cleanLocation = c.location?.replace(/\(ต\.[^\s]+\s+อ\.[^\)]+\)/g, '').replace(/\[(WALK IN|EMS)\]/g, '').trim() || c.location;
+
             return (
               <div
                 key={c.id}
@@ -550,10 +600,30 @@ export const HospitalMonitorPage: React.FC<HospitalMonitorPageProps> = ({
                     </h3>
 
                     {/* Location */}
-                    <p className="text-xs text-slate-600 flex items-center gap-1.5">
-                      <Navigation className="w-3.5 h-3.5 text-teal-600 shrink-0" />
-                      <span className="truncate">{c.location}</span>
-                    </p>
+                    <div className="flex flex-col gap-1.5">
+                      <p className="text-xs text-slate-600 flex items-center gap-1.5">
+                        <Navigation className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                        <span className="truncate" title={cleanLocation}>{cleanLocation}</span>
+                      </p>
+                      {(tambon || arrivalType) && (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {tambon && (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded border border-slate-200 bg-slate-100 text-slate-600 flex items-center gap-1">
+                              <MapPin className="w-3 h-3 text-slate-400" />
+                              {tambon}
+                            </span>
+                          )}
+                          {arrivalType && (
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded border flex items-center gap-1 ${
+                              arrivalType === 'EMS' ? 'bg-amber-100 border-amber-300 text-amber-800' : 'bg-blue-50 border-blue-200 text-blue-700'
+                            }`}>
+                              <Activity className="w-3 h-3" />
+                              {arrivalType}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
 
                     {/* FAST + NIHSS — full width */}
                     <div className="flex items-center gap-1 flex-wrap pt-0.5">
@@ -674,7 +744,7 @@ export const HospitalMonitorPage: React.FC<HospitalMonitorPageProps> = ({
                   const photos: string[] = Array.isArray(c.additional_photos) ? c.additional_photos : [];
                   if (photos.length === 0) return null;
                   return (
-                    <AdditionalPhotosStrip photos={photos} />
+                    <AdditionalPhotosStrip caseId={c.id} photos={photos} canDelete={canDeletePhoto} onDeletePhoto={handleDeletePhoto} />
                   );
                 })()}
 
@@ -787,14 +857,25 @@ export const HospitalMonitorPage: React.FC<HospitalMonitorPageProps> = ({
                     </a>
 
                     {c.id_photo_url && (
-                      <button
-                        type="button"
-                        onClick={() => handlePreviewPhoto(c.id_photo_url)}
-                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 p-2 sm:p-1.5 rounded-md transition-colors border border-slate-200 flex items-center justify-center shrink-0"
-                        title="ดูรูปถ่ายบัตร/อาการ"
-                      >
-                        <Eye className="w-4 h-4 text-teal-600" />
-                      </button>
+                      <div className="relative group">
+                        <button
+                          type="button"
+                          onClick={() => handlePreviewPhoto(c.id_photo_url)}
+                          className="bg-slate-100 hover:bg-slate-200 text-slate-700 p-2 sm:p-1.5 rounded-md transition-colors border border-slate-200 flex items-center justify-center shrink-0"
+                          title="ดูรูปถ่ายบัตร/อาการ"
+                        >
+                          <Eye className="w-4 h-4 text-teal-600" />
+                        </button>
+                        {canDeletePhoto && (
+                          <div
+                            className="absolute -top-1.5 -right-1.5 p-1 bg-rose-600 hover:bg-rose-700 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10 cursor-pointer shadow-md flex items-center justify-center"
+                            onClick={() => handleDeletePhoto(c.id, c.id_photo_url!, 'id')}
+                            title="ลบรูปภาพบัตร/อาการนี้"
+                          >
+                            <Trash2 className="w-2.5 h-2.5" />
+                          </div>
+                        )}
+                      </div>
                     )}
 
                     {(role === 'admin' || isCaseOwner(c)) && (

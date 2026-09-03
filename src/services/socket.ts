@@ -22,7 +22,8 @@ export function subscribeToEmergencyAlerts(
   onNewAlert: (newCase: CaseRecord) => void,
   onStatusUpdate: (data: { id: string; status: CaseStatus }) => void,
   onReset: () => void,
-  onCaseDeleted?: (data: { id: string }) => void
+  onCaseDeleted?: (data: { id: string }) => void,
+  onCaseUpdated?: (updatedCase: CaseRecord) => void
 ) {
   const s = getSocket();
 
@@ -43,10 +44,15 @@ export function subscribeToEmergencyAlerts(
     onReset();
   });
 
+  s.on('case_updated', (updatedCase: CaseRecord) => {
+    if (onCaseUpdated) onCaseUpdated(updatedCase);
+  });
+
   return () => {
     s.off('new_emergency_alert');
     s.off('case_status_updated');
     s.off('case_deleted');
     s.off('cases_reset');
+    s.off('case_updated');
   };
 }

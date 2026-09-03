@@ -72,6 +72,10 @@ function MainAppContent() {
       },
       ({ id }) => {
         setCases((prev) => prev.filter(c => c.id !== id));
+      },
+      (updatedCase: CaseRecord) => {
+        // Real-time update for photo deletion (and any case field updates)
+        setCases((prev) => prev.map(c => c.id === updatedCase.id ? { ...c, ...updatedCase } : c));
       }
     );
 

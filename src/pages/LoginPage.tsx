@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Lock, User, Siren, ArrowRight, Volume2, VolumeX, Terminal, UserPlus, ShieldCheck, CheckCircle2, Building2, Phone, UserCheck, X } from 'lucide-react';
+import { Lock, User, Siren, ArrowRight, Volume2, VolumeX, Terminal, UserPlus, ShieldCheck, CheckCircle2, Building2, Phone, UserCheck, X, PlusSquare, Download } from 'lucide-react';
 import { playEmergencySirenSound } from '../components/AudioAlert';
 import { Hospital, UserRole } from '../types/emergency';
 import { registerApi } from '../services/api';
@@ -21,6 +21,77 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // PWA Install Prompt
+  const deferredPromptRef = useRef<any>(null);
+  const [showInstallBtn, setShowInstallBtn] = useState(false);
+  const [isIos, setIsIos] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
+
+  useEffect(() => {
+    // Detect if already installed as standalone PWA
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstalled(true);
+      return;
+    }
+
+    // Detect iOS (no beforeinstallprompt support — show manual guide)
+    const ua = navigator.userAgent;
+    const iosDevice = /iphone|ipad|ipod/i.test(ua) && !(window as any).MSStream;
+    if (iosDevice) {
+      setIsIos(true);
+      setShowInstallBtn(true);
+      return;
+    }
+
+    // Android / Chrome / Edge — capture beforeinstallprompt
+    const handler = (e: Event) => {
+      e.preventDefault();
+      deferredPromptRef.current = e;
+      setShowInstallBtn(true);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+
+    // Hide when already installed
+    window.addEventListener('appinstalled', () => {
+      setShowInstallBtn(false);
+      setIsInstalled(true);
+    });
+
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallPwa = async () => {
+    if (isIos) {
+      MySwal.fire({
+        title: '📲 เพิ่มแอปไปหน้าจอ (iOS)',
+        html: `
+          <div class="text-left text-sm space-y-3 text-slate-700">
+            <p>เปิดใน <strong>Safari</strong> แล้วทำตามขั้นตอน:</p>
+            <ol class="space-y-2 list-decimal list-inside">
+              <li>กดไอคอน <strong>แชร์</strong> (📤) ที่แถบล่าง</li>
+              <li>เลื่อนลงหา <strong>"เพิ่มที่หน้าจอโฮม"</strong></li>
+              <li>กด <strong>เพิ่ม</strong> เพื่อยืนยัน</li>
+            </ol>
+            <p class="text-xs text-slate-500 mt-2">หมายเหตุ: ต้องใช้เบราว์เซอร์ Safari เท่านั้นสำหรับ iPhone/iPad</p>
+          </div>
+        `,
+        icon: 'info',
+        confirmButtonText: 'รับทราบ',
+        confirmButtonColor: '#0d9488',
+      });
+      return;
+    }
+
+    if (deferredPromptRef.current) {
+      deferredPromptRef.current.prompt();
+      const { outcome } = await deferredPromptRef.current.userChoice;
+      if (outcome === 'accepted') {
+        setShowInstallBtn(false);
+      }
+      deferredPromptRef.current = null;
+    }
+  };
 
   // Register Modal state
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -347,8 +418,26 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
 
       </div>
 
-      {/* Responsive Floating Action Button (FAB) for User Registration */}
-      <div className="fixed bottom-5 right-5 z-40">
+      {/* Responsive Floating Action Buttons (FAB) for Register + PWA Install */}
+      <div className="fixed bottom-5 right-5 z-40 flex items-center gap-2.5">
+
+        {/* PWA Install Button */}
+        {showInstallBtn && !isInstalled && (
+          <button
+            type="button"
+            onClick={handleInstallPwa}
+            className="flex items-center gap-2 bg-gradient-to-r from-slate-700 via-slate-800 to-slate-900 hover:from-slate-600 hover:to-slate-800 text-white font-bold text-xs sm:text-sm py-2.5 px-4 sm:px-5 rounded-full shadow-lg hover:shadow-xl active:scale-95 transition-all duration-300 cursor-pointer border border-slate-500/40 animate-in fade-in slide-in-from-right-4 duration-500"
+            title={isIos ? 'วิธีติดตั้งแอปไปหน้าจอ (iOS)' : 'ติดตั้ง TUNJAI ไว้ที่หน้าจอ'}
+          >
+            {isIos
+              ? <PlusSquare className="w-4 h-4 sm:w-5 sm:h-5 text-white stroke-[2.5]" />
+              : <Download className="w-4 h-4 sm:w-5 sm:h-5 text-white stroke-[2.5]" />
+            }
+            <span className="tracking-wide">ติดตั้ง</span>
+          </button>
+        )}
+
+        {/* Register Button */}
         <button
           type="button"
           onClick={() => setShowRegisterModal(true)}

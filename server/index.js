@@ -1329,6 +1329,139 @@ app.delete('/api/cases/:id/hospital-record', async (req, res) => {
   res.json({ success: true, message: 'Hospital record cleared successfully' });
 });
 
+// DELETE Single Photo from a Case
+app.delete('/api/cases/:id/photos', async (req, res) => {
+  const { id } = req.params;
+  const { photoUrl } = req.body;
+
+  if (!photoUrl) {
+    return res.status(400).json({ success: false, message: 'photoUrl is required' });
+  }
+
+  // Normalize the received photoUrl: strip any leading base path (e.g. /tunjai/ or /somepath/)
+  // We only keep the part starting with /uploads/... 
+  const normalizeUrl = (url) => {
+    if (!url) return url;
+    const idx = url.indexOf('/uploads/');
+    if (idx !== -1) return url.slice(idx);
+    return url;
+  };
+
+  const normalizedIncoming = normalizeUrl(photoUrl);
+
+  try {
+    // 1. Load case data — try DB first, fall back to memory
+    let caseItem = null;
+
+    if (isDbConnected()) {
+      const [rows] = await getPool().query('SELECT * FROM cases WHERE id = ?', [id]);
+      if (rows.length > 0) {
+        const r = rows[0];
+        caseItem = {
+          ...r,
+          additional_photos: (() => { try { return JSON.parse(r.additional_photos_json || '[]'); } catch { return []; } })()
+        };
+      }
+    }
+
+    if (!caseItem) {
+      // Fallback to memory
+      const memIdx = memoryCases.findIndex(c => c.id === id);
+      if (memIdx !== -1) caseItem = memoryCases[memIdx];
+    }
+
+    if (!caseItem) {
+      console.log(`[DELETE PHOTO] Case not found: ${id}`);
+      return res.status(404).json({ success: false, message: 'Case not found' });
+    }
+
+    console.log(`[DELETE PHOTO] Incoming photoUrl:`, photoUrl);
+    console.log(`[DELETE PHOTO] Normalized incoming:`, normalizedIncoming);
+    console.log(`[DELETE PHOTO] DB id_photo_url:`, caseItem.id_photo_url);
+    console.log(`[DELETE PHOTO] DB additional_photos:`, caseItem.additional_photos);
+
+    let updated = false;
+    let deletedFileUrl = null;
+
+    const normalizedIdPhoto = normalizeUrl(caseItem.id_photo_url);
+    if (normalizedIdPhoto && normalizedIdPhoto === normalizedIncoming) {
+      deletedFileUrl = caseItem.id_photo_url;
+      // Update DB
+      if (isDbConnected()) {
+        await getPool().query('UPDATE cases SET id_photo_url = NULL WHERE id = ?', [id]);
+      }
+      // Update memory
+      const memIdx = memoryCases.findIndex(c => c.id === id);
+      if (memIdx !== -1) memoryCases[memIdx].id_photo_url = null;
+      updated = true;
+    } else {
+      const photos = Array.isArray(caseItem.additional_photos) ? caseItem.additional_photos : [];
+      const matchIdx = photos.findIndex(u => normalizeUrl(u) === normalizedIncoming);
+      if (matchIdx !== -1) {
+        deletedFileUrl = photos[matchIdx];
+        const newPhotos = photos.filter((_, i) => i !== matchIdx);
+        const additional_photos_json = JSON.stringify(newPhotos);
+        // Update DB
+        if (isDbConnected()) {
+          await getPool().query('UPDATE cases SET additional_photos_json = ? WHERE id = ?', [additional_photos_json, id]);
+        }
+        // Update memory
+        const memIdx = memoryCases.findIndex(c => c.id === id);
+        if (memIdx !== -1) memoryCases[memIdx].additional_photos = newPhotos;
+        updated = true;
+      }
+    }
+
+    if (!updated) {
+      console.log(`[DELETE PHOTO] Photo not matched in case ${id}`);
+      return res.status(404).json({ success: false, message: 'Photo not found in case' });
+    }
+
+    // 3. Delete file from disk securely using the raw stored URL
+    if (deletedFileUrl) {
+      try {
+        const match = deletedFileUrl.match(/\/uploads\/cases\/([^/]+)\/([^/]+)$/);
+        if (match) {
+          const caseFolder = match[1];
+          const filename = match[2];
+          if (!filename.includes('..') && !filename.includes('/') && !caseFolder.includes('..')) {
+            const filePath = path.join(UPLOADS_DIR, caseFolder, filename);
+            if (fs.existsSync(filePath)) {
+              fs.unlinkSync(filePath);
+              console.log(`[DELETE PHOTO] ✅ Deleted file: ${filePath}`);
+            }
+          }
+        }
+      } catch (fsErr) {
+        console.error(`⚠️ Failed to delete photo file:`, fsErr.message);
+      }
+    }
+
+    // 4. Reload updated case from DB and broadcast
+    let updatedCase = null;
+    if (isDbConnected()) {
+      const [rows] = await getPool().query('SELECT * FROM cases WHERE id = ?', [id]);
+      if (rows.length > 0) {
+        const r = rows[0];
+        updatedCase = {
+          ...r,
+          additional_photos: (() => { try { return JSON.parse(r.additional_photos_json || '[]'); } catch { return []; } })()
+        };
+        // Sync to memory
+        const memIdx = memoryCases.findIndex(c => c.id === id);
+        if (memIdx !== -1) Object.assign(memoryCases[memIdx], updatedCase);
+      }
+    }
+
+    io.emit('case_updated', updatedCase || { id });
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error('Error deleting photo:', err);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
 // DELETE Single Case — also removes uploaded image files
 app.delete('/api/cases/:id', async (req, res) => {
   const { id } = req.params;

@@ -4,13 +4,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#ffffff" />
+  <meta name="theme-color" content="#0d9488" />
   <meta name="description" content="ระบบแจ้งเตือนและส่งต่อผู้ป่วยโรคหลอดเลือดสมองวิกฤต โรงพยาบาลกมลาไสย จังหวัดกาฬสินธุ์" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="TUNJAI" />
+  <meta name="application-name" content="TUNJAI" />
+  <meta name="msapplication-TileColor" content="#0d9488" />
+  <meta name="msapplication-TileImage" content="icon-192.png" />
   <title>ทันใจ | TUNJAI Stroke Alert FAST Track ระบบแจ้งเตือนและส่งต่อผู้ป่วยโรคหลอดเลือดสมองวิกฤต - โรงพยาบาลกมลาไสย จังหวัดกาฬสินธุ์</title>
 
-  <!-- Favicon: MOPH Logo -->
-  <link rel="icon" type="image/png" href="https://bdh.moph.go.th/site/wp-content/uploads/2022/12/cropped-logo-MOPH.png" />
-  <link rel="apple-touch-icon" href="https://bdh.moph.go.th/site/wp-content/uploads/2022/12/cropped-logo-MOPH.png" />
+  <!-- Web App Manifest (PWA) -->
+  <link rel="manifest" href="manifest.json" />
+
+  <!-- Icons: Favicon & Apple Touch -->
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
+  <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
+  <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
 
   <!-- Google Fonts: Anuphan -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,6 +32,25 @@
   <!-- Leaflet CSS for Interactive Map Pinning -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+  <!-- Service Worker Registration (PWA) -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        // Detect sub-path deployment (e.g. /tunjai/)
+        const swPath = window.location.pathname.startsWith('/tunjai')
+          ? '/tunjai/sw.js'
+          : '/sw.js';
+        navigator.serviceWorker.register(swPath, {
+          scope: window.location.pathname.startsWith('/tunjai') ? '/tunjai/' : '/'
+        }).then(function (reg) {
+          console.log('✅ Service Worker registered:', reg.scope);
+        }).catch(function (err) {
+          console.warn('⚠️ Service Worker registration failed:', err);
+        });
+      });
+    }
+  </script>
 </head>
 
 <body class="bg-slate-50 text-slate-800 font-sans antialiased selection:bg-teal-500 selection:text-white">

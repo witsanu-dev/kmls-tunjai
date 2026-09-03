@@ -252,6 +252,21 @@ export async function updateCaseStatus(id: string, status: CaseStatus): Promise<
   return true;
 }
 
+export async function deleteCasePhoto(id: string, photoUrl: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/cases/${id}/photos`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ photoUrl }),
+    });
+    if (res.ok) {
+      // Backend handles broadcasting case_updated which will refresh frontend state automatically via websocket
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
 export async function deleteSingleCase(id: string): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE}/cases/${id}`, { method: 'DELETE' });
