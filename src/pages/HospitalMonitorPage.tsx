@@ -142,8 +142,16 @@ export const HospitalMonitorPage: React.FC<HospitalMonitorPageProps> = ({
   const canArrive     = role === 'er_staff' || role === 'admin';
   const canRevert     = role === 'er_staff' || role === 'admin';
   const canFillForm   = role === 'er_staff' || role === 'admin';
-  const canDeleteCase = role === 'er_staff' || role === 'admin';
   const canResetAll   = role === 'admin';
+
+  // Check if current user is the owner/reporter of a case
+  const isCaseOwner = (c: CaseRecord): boolean => {
+    if (!user) return false;
+    const fr = (c.fr_name || '').trim().toLowerCase();
+    const myName = (user.full_name || '').trim().toLowerCase();
+    const myUsername = (user.username || '').trim().toLowerCase();
+    return fr.includes(myName) || fr.includes(myUsername) || fr.startsWith(myName);
+  };
 
   useEffect(() => {
     const timer = setInterval(() => setNowMs(Date.now()), 1000);
@@ -170,12 +178,12 @@ export const HospitalMonitorPage: React.FC<HospitalMonitorPageProps> = ({
 
   const activeCases = cases.filter(c => c.status !== 'arrived');
   const doneCases = cases.filter(c => c.status === 'arrived');
-  const myCases = cases.filter(c => c.fr_name === user?.full_name);
+  const myCases = cases.filter(c => isCaseOwner(c));
 
   const displayedCases = cases.filter(c => {
     if (filterStatus === 'active') return c.status !== 'arrived';
     if (filterStatus === 'done') return c.status === 'arrived';
-    if (filterStatus === 'mine') return c.fr_name === user?.full_name;
+    if (filterStatus === 'mine') return isCaseOwner(c);
     return true;
   });
 
@@ -789,12 +797,12 @@ export const HospitalMonitorPage: React.FC<HospitalMonitorPageProps> = ({
                       </button>
                     )}
 
-                    {canDeleteCase && (
+                    {(role === 'admin' || isCaseOwner(c)) && (
                       <button
                         type="button"
                         onClick={() => handleDeleteSingleCaseConfirm(c)}
                         className="bg-slate-100 hover:bg-rose-50 text-rose-600 hover:text-rose-700 p-2 sm:p-1.5 rounded-md transition-colors border border-slate-200 hover:border-rose-300 flex items-center justify-center shrink-0"
-                        title="ลบเคสนี้ออกจากระบบ (ER / Admin เท่านั้น)"
+                        title="ลบเคสนี้ออกจากระบบ (ผู้แจ้งเหตุ / Admin เท่านั้น)"
                       >
                         <Trash2 className="w-4 h-4 text-rose-600" />
                       </button>
