@@ -1376,6 +1376,16 @@ app.delete('/api/cases', async (req, res) => {
   res.json({ success: true, message: 'All cases reset successfully' });
 });
 
+// ── Serve React Frontend (dist) in production if available ────────────────────
+const DIST_DIR = path.join(__dirname, '..', 'dist');
+if (fs.existsSync(DIST_DIR)) {
+  app.use(express.static(DIST_DIR));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) return next();
+    res.sendFile(path.join(DIST_DIR, 'index.html'));
+  });
+}
+
 // Socket.io Real-Time Connection Setup
 io.on('connection', (socket) => {
   console.log(`🔌 Client connected to Real-Time Alert Engine: ${socket.id}`);
