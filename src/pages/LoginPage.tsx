@@ -45,10 +45,23 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
       setIsIos(true);
     }
 
-    // Android / Chrome / Edge — capture beforeinstallprompt if available
+    // Android / Chrome / Edge — capture beforeinstallprompt and auto-trigger dialog
     const handler = (e: Event) => {
       e.preventDefault();
       deferredPromptRef.current = e;
+
+      // Auto-trigger install prompt on page load for maximum convenience
+      setTimeout(() => {
+        if (deferredPromptRef.current) {
+          deferredPromptRef.current.prompt();
+          deferredPromptRef.current.userChoice.then((choice: any) => {
+            if (choice.outcome === 'accepted') {
+              setShowInstallBtn(false);
+            }
+            deferredPromptRef.current = null;
+          });
+        }
+      }, 1000);
     };
     window.addEventListener('beforeinstallprompt', handler);
 
@@ -64,21 +77,29 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
   const handleInstallPwa = async () => {
     if (isIos) {
       MySwal.fire({
-        title: '📲 เพิ่ม TUNJAI ไปหน้าจอ (iOS)',
+        title: '📲 ติดตั้ง TUNJAI บน iPhone / iPad',
+        imageUrl: 'icon-192.png',
+        imageWidth: 64,
+        imageHeight: 64,
+        imageAlt: 'TUNJAI Icon',
         html: `
           <div class="text-left text-sm space-y-3 text-slate-700">
-            <p>เปิดใน <strong>Safari</strong> แล้วทำตามขั้นตอนง่ายๆ ดังนี้:</p>
-            <ol class="space-y-2 list-decimal list-inside bg-slate-50 p-3 rounded-md border border-slate-200">
-              <li>กดไอคอน <strong>แชร์</strong> (📤) ที่แถบล่างของ Safari</li>
-              <li>เลื่อนลงหาเมนู <strong>"เพิ่มที่หน้าจอโฮม" (Add to Home Screen)</strong></li>
-              <li>กด <strong>"เพิ่ม" (Add)</strong> มุมขวาบน</li>
+            <p class="font-medium">ทำตามขั้นตอนง่ายๆ 3 ขั้นตอนเพื่อเพิ่มทางลัดแอปไปยังหน้าจอโฮม:</p>
+            <ol class="space-y-2.5 list-decimal list-inside bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs sm:text-sm">
+              <li>เปิดเว็บนี้ด้วย <strong>Safari Browser</strong></li>
+              <li>กดปุ่ม <strong>แชร์</strong> (📤) บริเวณแถบเมนูด้านล่าง</li>
+              <li>เลื่อนลงแล้วเลือก <strong>"เพิ่มที่หน้าจอโฮม" (Add to Home Screen)</strong></li>
             </ol>
-            <p class="text-xs text-teal-700 font-semibold mt-2">✨ คุณจะได้ทางลัดแอป TUNJAI บนหน้าจอมือถือทันที!</p>
+            <p class="text-xs text-teal-700 font-bold text-center mt-2 bg-teal-50 py-1.5 px-2 rounded-md border border-teal-200">
+              ✨ ได้ไอคอนแอป TUNJAI บนหน้าจอมือถือทันที!
+            </p>
           </div>
         `,
-        icon: 'info',
-        confirmButtonText: 'รับทราบ',
+        confirmButtonText: 'ตกลง',
         confirmButtonColor: '#0d9488',
+        customClass: {
+          image: 'rounded-xl shadow-md border border-slate-100',
+        }
       });
       return;
     }
@@ -93,21 +114,29 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
     } else {
       // Fallback for Android/Chrome when direct prompt is not supported (e.g. non-HTTPS or custom webview)
       MySwal.fire({
-        title: '📱 ติดตั้งแอป TUNJAI บนมือถือ / คอมพิวเตอร์',
+        title: '📱 ติดตั้งแอป TUNJAI Alert FAST Track',
+        imageUrl: 'icon-192.png',
+        imageWidth: 64,
+        imageHeight: 64,
+        imageAlt: 'TUNJAI Icon',
         html: `
           <div class="text-left text-sm space-y-3 text-slate-700">
-            <p>ทำตามขั้นตอนง่ายๆ เพื่อสร้างไอคอนทางลัดบนหน้าจอ:</p>
-            <ol class="space-y-2 list-decimal list-inside bg-slate-50 p-3 rounded-md border border-slate-200">
-              <li>กดไอคอน <strong>เมนู 3 จุด (⋮)</strong> ที่มุมขวาบนของเบราว์เซอร์</li>
-              <li>เลือก <strong>"ติดตั้งแอป" (Install app)</strong> หรือ <strong>"เพิ่มลงในหน้าจอหลัก" (Add to Home screen)</strong></li>
+            <p class="font-medium">สร้างไอคอนทางลัด TUNJAI บนหน้าจอมือถือง่ายๆ:</p>
+            <ol class="space-y-2.5 list-decimal list-inside bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs sm:text-sm">
+              <li>กดไอคอน <strong>เมนู 3 จุด (⋮)</strong> ที่มุมขวาบนเบราว์เซอร์</li>
+              <li>เลือก <strong>"ติดตั้งแอป" (Install app)</strong> หรือ <strong>"เพิ่มลงในหน้าจอหลัก"</strong></li>
               <li>กด <strong>"เพิ่ม / ติดตั้ง"</strong> เพื่อยืนยัน</li>
             </ol>
-            <p class="text-xs text-teal-700 font-semibold mt-2">✨ ไอคอน TUNJAI จะถูกสร้างบนหน้าจอมือถือทันที เข้าใช้งานได้สะดวกรวดเร็ว!</p>
+            <p class="text-xs text-teal-700 font-bold text-center mt-2 bg-teal-50 py-1.5 px-2 rounded-md border border-teal-200">
+              ✨ ไอคอนหัวใจสีเขียว TUNJAI จะถูกสร้างบนหน้าจอทันที!
+            </p>
           </div>
         `,
-        icon: 'info',
-        confirmButtonText: 'ตกลง',
+        confirmButtonText: 'รับทราบ',
         confirmButtonColor: '#0d9488',
+        customClass: {
+          image: 'rounded-xl shadow-md border border-slate-100',
+        }
       });
     }
   };
@@ -448,10 +477,11 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
             className="flex items-center gap-2 bg-gradient-to-r from-slate-700 via-slate-800 to-slate-900 hover:from-slate-600 hover:to-slate-800 text-white font-bold text-xs sm:text-sm py-2.5 px-4 sm:px-5 rounded-full shadow-lg hover:shadow-xl active:scale-95 transition-all duration-300 cursor-pointer border border-slate-500/40 animate-in fade-in slide-in-from-right-4 duration-500"
             title={isIos ? 'วิธีติดตั้งแอปไปหน้าจอ (iOS)' : 'ติดตั้ง TUNJAI ไว้ที่หน้าจอ'}
           >
-            {isIos
-              ? <PlusSquare className="w-4 h-4 sm:w-5 sm:h-5 text-white stroke-[2.5]" />
-              : <Download className="w-4 h-4 sm:w-5 sm:h-5 text-white stroke-[2.5]" />
-            }
+            <img
+              src="icon-192.png"
+              alt="TUNJAI App Icon"
+              className="w-5 h-5 sm:w-5 sm:h-5 rounded-md object-contain shrink-0 shadow-xs border border-white/20"
+            />
             <span className="tracking-wide">ติดตั้ง</span>
           </button>
         )}
