@@ -1512,7 +1512,13 @@ app.delete('/api/cases', async (req, res) => {
 // ── Serve React Frontend (dist) in production if available ────────────────────
 const DIST_DIR = path.join(__dirname, '..', 'dist');
 if (fs.existsSync(DIST_DIR)) {
-  app.use(express.static(DIST_DIR));
+  app.use(express.static(DIST_DIR, {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('manifest.json')) {
+        res.setHeader('Content-Type', 'application/manifest+json');
+      }
+    }
+  }));
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) return next();
     res.sendFile(path.join(DIST_DIR, 'index.html'));
