@@ -75,35 +75,7 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
   }, []);
 
   const handleInstallPwa = async () => {
-    if (isIos) {
-      MySwal.fire({
-        title: '📲 ติดตั้ง TUNJAI บน iPhone / iPad',
-        imageUrl: 'icon-192.png',
-        imageWidth: 64,
-        imageHeight: 64,
-        imageAlt: 'TUNJAI Icon',
-        html: `
-          <div class="text-left text-sm space-y-3 text-slate-700">
-            <p class="font-medium">ทำตามขั้นตอนง่ายๆ 3 ขั้นตอนเพื่อเพิ่มทางลัดแอปไปยังหน้าจอโฮม:</p>
-            <ol class="space-y-2.5 list-decimal list-inside bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs sm:text-sm">
-              <li>เปิดเว็บนี้ด้วย <strong>Safari Browser</strong></li>
-              <li>กดปุ่ม <strong>แชร์</strong> (📤) บริเวณแถบเมนูด้านล่าง</li>
-              <li>เลื่อนลงแล้วเลือก <strong>"เพิ่มที่หน้าจอโฮม" (Add to Home Screen)</strong></li>
-            </ol>
-            <p class="text-xs text-teal-700 font-bold text-center mt-2 bg-teal-50 py-1.5 px-2 rounded-md border border-teal-200">
-              ✨ ได้ไอคอนแอป TUNJAI บนหน้าจอมือถือทันที!
-            </p>
-          </div>
-        `,
-        confirmButtonText: 'ตกลง',
-        confirmButtonColor: '#0d9488',
-        customClass: {
-          image: 'rounded-xl shadow-md border border-slate-100',
-        }
-      });
-      return;
-    }
-
+    // 1. Direct Native Install Prompt (Android / Chrome / Edge / Desktop)
     if (deferredPromptRef.current) {
       deferredPromptRef.current.prompt();
       const { outcome } = await deferredPromptRef.current.userChoice;
@@ -111,33 +83,20 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
         setShowInstallBtn(false);
       }
       deferredPromptRef.current = null;
-    } else {
-      // Fallback for Android/Chrome when direct prompt is not supported (e.g. non-HTTPS or custom webview)
-      MySwal.fire({
-        title: '📱 ติดตั้งแอป TUNJAI Alert FAST Track',
-        imageUrl: 'icon-192.png',
-        imageWidth: 64,
-        imageHeight: 64,
-        imageAlt: 'TUNJAI Icon',
-        html: `
-          <div class="text-left text-sm space-y-3 text-slate-700">
-            <p class="font-medium">สร้างไอคอนทางลัด TUNJAI บนหน้าจอมือถือง่ายๆ:</p>
-            <ol class="space-y-2.5 list-decimal list-inside bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs sm:text-sm">
-              <li>กดไอคอน <strong>เมนู 3 จุด (⋮)</strong> ที่มุมขวาบนเบราว์เซอร์</li>
-              <li>เลือก <strong>"ติดตั้งแอป" (Install app)</strong> หรือ <strong>"เพิ่มลงในหน้าจอหลัก"</strong></li>
-              <li>กด <strong>"เพิ่ม / ติดตั้ง"</strong> เพื่อยืนยัน</li>
-            </ol>
-            <p class="text-xs text-teal-700 font-bold text-center mt-2 bg-teal-50 py-1.5 px-2 rounded-md border border-teal-200">
-              ✨ ไอคอนหัวใจสีเขียว TUNJAI จะถูกสร้างบนหน้าจอทันที!
-            </p>
-          </div>
-        `,
-        confirmButtonText: 'รับทราบ',
-        confirmButtonColor: '#0d9488',
-        customClass: {
-          image: 'rounded-xl shadow-md border border-slate-100',
-        }
-      });
+      return;
+    }
+
+    // 2. Direct Web Share Action (iOS Safari / Mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'TUNJAI Alert FAST Track',
+          text: 'ระบบแจ้งเตือนและส่งต่อผู้ป่วยโรคหลอดเลือดสมองวิกฤต',
+          url: window.location.href,
+        });
+      } catch (e) {
+        // User cancelled share sheet
+      }
     }
   };
 
