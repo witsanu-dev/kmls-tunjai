@@ -2,13 +2,13 @@
   "name": "TUNJAI Alert FAST Track",
   "short_name": "TUNJAI",
   "description": "ระบบแจ้งเตือนและส่งต่อผู้ป่วยโรคหลอดเลือดสมองวิกฤต โรงพยาบาลกมลาไสย จังหวัดกาฬสินธุ์",
-  "start_url": "./",
+  "start_url": "/tunjai/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0d9488",
   "orientation": "portrait-primary",
   "lang": "th",
-  "scope": "./",
+  "scope": "/tunjai/",
   "icons": [
     {
       "src": "icon-144.png",

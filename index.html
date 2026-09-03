@@ -15,9 +15,6 @@
   <meta name="msapplication-TileImage" content="icon-192.png" />
   <title>ทันใจ | TUNJAI Stroke Alert FAST Track ระบบแจ้งเตือนและส่งต่อผู้ป่วยโรคหลอดเลือดสมองวิกฤต - โรงพยาบาลกมลาไสย จังหวัดกาฬสินธุ์</title>
 
-  <!-- Web App Manifest (PWA) -->
-  <link rel="manifest" id="pwa-manifest-link" href="manifest.json" />
-
   <!-- Favicon: Ministry of Public Health Logo (Browser Tab) -->
   <link rel="icon" type="image/png" href="https://bdh.moph.go.th/site/wp-content/uploads/2022/12/cropped-logo-MOPH.png" />
   <link rel="shortcut icon" type="image/png" href="https://bdh.moph.go.th/site/wp-content/uploads/2022/12/cropped-logo-MOPH.png" />
@@ -34,7 +31,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 
-  <!-- Service Worker & PWA Manifest Path Normalization -->
+  <!-- Service Worker & PWA Manifest Dynamic Registration -->
   <script>
     (function () {
       // Determine application root base URL for sub-paths (e.g. /tunjai/)
@@ -46,11 +43,11 @@
         baseDir = path.substring(0, path.lastIndexOf('/') + 1) || '/';
       }
 
-      // Update manifest link dynamically to avoid 404 on sub-routes
-      const manifestLink = document.getElementById('pwa-manifest-link') || document.querySelector('link[rel="manifest"]');
-      if (manifestLink) {
-        manifestLink.href = baseDir + 'manifest.json';
-      }
+      // Dynamically inject manifest link to prevent Vite from moving manifest.json to assets/
+      const link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = baseDir + 'manifest.json';
+      document.head.appendChild(link);
 
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function () {
