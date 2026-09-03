@@ -45,23 +45,11 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
       setIsIos(true);
     }
 
-    // Android / Chrome / Edge — capture beforeinstallprompt and auto-trigger dialog
+    // Android / Chrome / Edge — capture beforeinstallprompt event safely
     const handler = (e: Event) => {
       e.preventDefault();
       deferredPromptRef.current = e;
-
-      // Auto-trigger install prompt on page load for maximum convenience
-      setTimeout(() => {
-        if (deferredPromptRef.current) {
-          deferredPromptRef.current.prompt();
-          deferredPromptRef.current.userChoice.then((choice: any) => {
-            if (choice.outcome === 'accepted') {
-              setShowInstallBtn(false);
-            }
-            deferredPromptRef.current = null;
-          });
-        }
-      }, 1000);
+      setShowInstallBtn(true);
     };
     window.addEventListener('beforeinstallprompt', handler);
 
@@ -77,27 +65,52 @@ export const LoginPage: React.FC<{ onLoginSuccess?: () => void; hospitals?: Hosp
   const handleInstallPwa = async () => {
     // 1. Direct Native Install Prompt (Android / Chrome / Edge / Desktop)
     if (deferredPromptRef.current) {
-      deferredPromptRef.current.prompt();
-      const { outcome } = await deferredPromptRef.current.userChoice;
-      if (outcome === 'accepted') {
-        setShowInstallBtn(false);
+      try {
+        deferredPromptRef.current.prompt();
+        const choiceResult = await deferredPromptRef.current.userChoice;
+        if (choiceResult && choiceResult.outcome === 'accepted') {
+          setShowInstallBtn(false);
+        }
+      } catch (err) {
+        console.warn('PWA Prompt Error:', err);
+      } finally {
+        deferredPromptRef.current = null;
       }
-      deferredPromptRef.current = null;
       return;
     }
 
-    // 2. Direct Web Share Action (iOS Safari / Mobile)
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'TUNJAI Alert FAST Track',
-          text: 'ระบบแจ้งเตือนและส่งต่อผู้ป่วยโรคหลอดเลือดสมองวิกฤต',
-          url: window.location.href,
-        });
-      } catch (e) {
-        // User cancelled share sheet
+    // 2. Clear instructions popup for iOS or browsers where prompt event is unavailable
+    MySwal.fire({
+      title: isIos ? '📲 ติดตั้ง TUNJAI บน iPhone / iPad' : '📱 ติดตั้งแอป TUNJAI บนหน้าจอมือถือ',
+      imageUrl: 'icon-192.png',
+      imageWidth: 64,
+      imageHeight: 64,
+      imageAlt: 'TUNJAI Icon',
+      html: isIos ? `
+        <div class="text-left text-sm space-y-3 text-slate-700">
+          <p class="font-medium">ทำตามขั้นตอนง่ายๆ เพื่อสร้างไอคอนแอปบนหน้าจอโฮม:</p>
+          <ol class="space-y-2 list-decimal list-inside bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs sm:text-sm">
+            <li>เปิดเว็บนี้ด้วย <strong>Safari Browser</strong></li>
+            <li>กดปุ่ม <strong>แชร์</strong> (📤) บริเวณแถบเมนูด้านล่าง</li>
+            <li>เลื่อนลงแล้วเลือก <strong>"เพิ่มที่หน้าจอโฮม" (Add to Home Screen)</strong></li>
+          </ol>
+        </div>
+      ` : `
+        <div class="text-left text-sm space-y-3 text-slate-700">
+          <p class="font-medium">ทำตามขั้นตอนเพื่อเพิ่มทางลัดแอปไปยังหน้าจอหลัก:</p>
+          <ol class="space-y-2 list-decimal list-inside bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs sm:text-sm">
+            <li>กดไอคอน <strong>เมนู 3 จุด (⋮)</strong> ที่มุมขวาบนเบราว์เซอร์</li>
+            <li>เลือก <strong>"ติดตั้งแอป" (Install app)</strong> หรือ <strong>"เพิ่มลงในหน้าจอหลัก"</strong></li>
+            <li>กด <strong>"เพิ่ม / ติดตั้ง"</strong> เพื่อยืนยัน</li>
+          </ol>
+        </div>
+      `,
+      confirmButtonText: 'ตกลง',
+      confirmButtonColor: '#0d9488',
+      customClass: {
+        image: 'rounded-xl shadow-md border border-slate-100',
       }
-    }
+    });
   };
 
   // Register Modal state
